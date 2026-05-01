@@ -1,0 +1,2641 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Kharcha Manager v4 – मेरा बजट</title>
+
+<!-- ===== PWA META TAGS ===== -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kharcha">
+<meta name="application-name" content="Kharcha Manager">
+<meta name="theme-color" content="#0d1117">
+<meta name="description" content="Mera personal kharcha, loan, EMI aur udhar manager">
+<meta name="msapplication-TileColor" content="#0d1117">
+<link id="pwa-manifest" rel="manifest">
+
+<!-- Apple Touch Icons (generated via canvas in JS) -->
+<link id="apple-touch-icon" rel="apple-touch-icon" sizes="180x180">
+<link id="favicon-32" rel="icon" type="image/png" sizes="32x32">
+
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117; --bg2: #161b22; --bg3: #1f2937;
+  --card: #1a2235; --card2: #202c42; --border: #2d3748;
+  --gold: #f6c90e; --gold2: #e6b800;
+  --amber: #fb923c; --green: #22c55e; --red: #ef4444;
+  --blue: #60a5fa; --purple: #a78bfa; --cyan: #22d3ee;
+  --text: #e2e8f0; --text2: #94a3b8; --text3: #64748b;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --radius: 16px;
+  --font-head: 'Baloo 2', cursive;
+  --font-body: 'Nunito', sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;max-width:480px;margin:0 auto;overflow-x:hidden}
+
+/* ===== PIN SCREEN ===== */
+.pin-screen{position:fixed;inset:0;z-index:500;background:linear-gradient(160deg,#0d1117 0%,#0a1628 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;gap:0}
+.pin-logo{font-family:var(--font-head);font-size:42px;font-weight:800;color:var(--gold);margin-bottom:4px;text-shadow:0 0 30px rgba(246,201,14,0.3)}
+.pin-tagline{font-size:13px;color:var(--text2);margin-bottom:36px;text-align:center}
+.pin-sub{font-size:15px;font-weight:700;color:var(--text);margin-bottom:20px;text-align:center;min-height:24px}
+.pin-dots{display:flex;gap:16px;margin-bottom:12px}
+.pin-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);background:transparent;transition:all 0.2s}
+.pin-dot.filled{background:var(--gold);border-color:var(--gold);transform:scale(1.1)}
+.pin-error{color:var(--red);font-size:13px;font-weight:600;margin-bottom:16px;min-height:20px;text-align:center}
+.pin-hint{font-size:12px;color:var(--text3);margin-bottom:20px;text-align:center;min-height:18px}
+.pin-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:280px;width:100%}
+.pin-key{aspect-ratio:1;border-radius:16px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-size:24px;font-weight:700;cursor:pointer;transition:all 0.15s;color:var(--text);user-select:none}
+.pin-key:active{background:var(--gold);color:#000;transform:scale(0.92)}
+.pin-key.special{font-size:18px;color:var(--text2)}
+.pin-attempts{font-size:11px;color:var(--text3);margin-top:14px;text-align:center}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.shake{animation:shake 0.4s ease}
+
+/* ===== HEADER ===== */
+.header{background:linear-gradient(135deg,#1a2a4a 0%,#0d1b33 100%);padding:16px 18px;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.header-title{font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--gold)}
+.header-sub{font-size:11px;color:var(--text2);margin-top:1px}
+.header-right{display:flex;gap:8px;align-items:center}
+.lock-btn{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 12px;cursor:pointer;font-size:16px;color:var(--gold);transition:all 0.2s}
+.lock-btn:hover{background:var(--card2)}
+
+/* ===== TABS ===== */
+.tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:64px;z-index:99}
+.tab-btn{flex:1;padding:10px 2px 8px;text-align:center;font-family:var(--font-head);font-size:10px;font-weight:600;color:var(--text3);cursor:pointer;transition:all 0.2s;border-bottom:3px solid transparent}
+.tab-btn.active{color:var(--gold);border-bottom-color:var(--gold)}
+.tab-icon{font-size:17px;display:block;margin-bottom:1px}
+
+/* ===== PAGES ===== */
+.page{display:none;padding:14px 14px 100px}
+.page.active{display:block}
+
+/* ===== CARDS ===== */
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.sum-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;position:relative;overflow:hidden}
+.sum-card::before{content:'';position:absolute;top:-20px;right:-20px;width:70px;height:70px;border-radius:50%;opacity:0.08}
+.sum-card.c-gold::before{background:var(--gold)}
+.sum-card.c-green::before{background:var(--green)}
+.sum-card.c-red::before{background:var(--red)}
+.sum-card.c-blue::before{background:var(--blue)}
+.sum-card.c-purple::before{background:var(--purple)}
+.sum-label{font-size:9px;color:var(--text2);font-weight:700;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:5px}
+.sum-value{font-family:var(--font-head);font-size:19px;font-weight:800}
+.sum-value.gold{color:var(--gold)}.sum-value.green{color:var(--green)}.sum-value.red{color:var(--red)}.sum-value.blue{color:var(--blue)}.sum-value.purple{color:var(--purple)}.sum-value.amber{color:var(--amber)}.sum-value.cyan{color:var(--cyan)}
+.sum-sub{font-size:9px;color:var(--text3);margin-top:3px}
+.wide-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+
+/* ===== SECTION HEADER ===== */
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin:16px 0 10px}
+.sec-title{font-family:var(--font-head);font-size:16px;font-weight:700;color:var(--text)}
+.add-btn{background:var(--gold);color:#000;border:none;border-radius:10px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:var(--font-body);transition:all 0.2s;display:flex;align-items:center;gap:4px}
+.add-btn:active{transform:scale(0.96)}
+
+/* ===== LOAN CARD ===== */
+.loan-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;position:relative;overflow:hidden}
+.loan-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px}
+.loan-card.lc-0::before{background:var(--gold)}.loan-card.lc-1::before{background:var(--blue)}.loan-card.lc-2::before{background:var(--green)}.loan-card.lc-3::before{background:var(--amber)}.loan-card.lc-4::before{background:var(--purple)}.loan-card.lc-5::before{background:var(--cyan)}
+.loan-card.completed{opacity:0.7;border-color:var(--green)}
+.loan-card.completed::before{background:var(--green)}
+.loan-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
+.loan-name{font-family:var(--font-head);font-size:17px;font-weight:700}
+.loan-meta{font-size:10px;color:var(--text2);margin-top:2px}
+.loan-badge{display:inline-block;padding:3px 8px;border-radius:20px;font-size:9px;font-weight:700;margin-top:4px}
+.badge-active{background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.3)}
+.badge-done{background:rgba(96,165,250,0.15);color:var(--blue);border:1px solid rgba(96,165,250,0.3)}
+.badge-overdue{background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3)}
+.loan-actions{display:flex;gap:6px}
+.icon-btn{background:var(--bg3);border:1px solid var(--border);border-radius:8px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:all 0.2s;color:var(--text2)}
+.icon-btn:hover{background:var(--card2);color:var(--text)}
+.icon-btn.del:hover{background:rgba(239,68,68,0.15);color:var(--red);border-color:var(--red)}
+.loan-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
+.loan-stat-label{font-size:8px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:3px}
+.loan-stat-val{font-family:var(--font-head);font-size:14px;font-weight:700}
+.progress-wrap{margin-bottom:10px}
+.progress-label{display:flex;justify-content:space-between;font-size:10px;color:var(--text2);margin-bottom:5px}
+.progress-bar{background:var(--bg3);border-radius:99px;height:7px;overflow:hidden}
+.progress-fill{height:100%;border-radius:99px;transition:width 0.5s ease}
+.pf-good{background:linear-gradient(90deg,var(--green),#4ade80)}
+.pf-mid{background:linear-gradient(90deg,var(--amber),#fbbf24)}
+.pf-low{background:linear-gradient(90deg,var(--red),#f87171)}
+.pf-done{background:linear-gradient(90deg,var(--blue),var(--cyan))}
+.emi-due-box{background:rgba(251,146,60,0.08);border:1px solid rgba(251,146,60,0.2);border-radius:10px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.emi-due-left{font-size:11px;color:var(--text2)}
+.emi-due-date{font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--amber);margin-top:2px}
+.emi-due-days{font-size:11px;font-weight:700}
+.pay-emi-btn{background:var(--green);color:#000;border:none;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer;font-family:var(--font-body);transition:all 0.2s;white-space:nowrap}
+.pay-emi-btn:active{transform:scale(0.95)}
+.pay-emi-btn:disabled{background:var(--bg3);color:var(--text3);cursor:not-allowed}
+.loan-note{margin-top:8px;font-size:11px;color:var(--text3);border-top:1px solid var(--border);padding-top:8px}
+
+/* ===== EXPENSE CARD ===== */
+.expense-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.exp-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.exp-info{flex:1;min-width:0}
+.exp-name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.exp-meta{font-size:11px;color:var(--text2);margin-top:2px}
+.exp-amount{font-family:var(--font-head);font-size:16px;font-weight:800;text-align:right}
+.exp-amount.out{color:var(--red)}.exp-amount.inp{color:var(--green)}
+.exp-del{font-size:13px;color:var(--text3);cursor:pointer;text-align:right;margin-top:3px}
+
+/* ===== MONTH BAR ===== */
+.month-bar{display:flex;gap:8px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}
+.month-bar::-webkit-scrollbar{display:none}
+.month-chip{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:6px 14px;white-space:nowrap;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;color:var(--text2);flex-shrink:0}
+.month-chip.active{background:var(--gold);color:#000;border-color:var(--gold)}
+
+/* ===== CAT GRID ===== */
+.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px}
+.cat-item{background:var(--bg3);border:2px solid var(--border);border-radius:12px;padding:10px 4px;text-align:center;cursor:pointer;transition:all 0.2s}
+.cat-item.selected{border-color:var(--gold);background:rgba(246,201,14,0.08)}
+.cat-item-icon{font-size:20px}.cat-item-label{font-size:9px;color:var(--text2);margin-top:3px;font-weight:700}
+
+/* ===== MODAL ===== */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:24px 24px 0 0;padding:22px 18px 36px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;animation:slideUp 0.3s ease}
+@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.modal-title{font-family:var(--font-head);font-size:20px;font-weight:800;color:var(--gold)}
+.close-btn{background:var(--bg3);border:1px solid var(--border);border-radius:10px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--text2)}
+
+/* ===== FORM ===== */
+.form-group{margin-bottom:12px}
+.form-label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:block}
+.form-input{width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:12px;padding:11px 14px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;transition:border-color 0.2s;-webkit-appearance:none}
+.form-input:focus{border-color:var(--gold)}
+.form-input option{background:var(--bg2)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.submit-btn{width:100%;background:var(--gold);color:#000;border:none;border-radius:14px;padding:14px;font-family:var(--font-head);font-size:16px;font-weight:800;cursor:pointer;margin-top:8px;transition:all 0.2s}
+.submit-btn:active{transform:scale(0.98)}
+
+/* ===== TYPE TOGGLE ===== */
+.type-toggle{display:flex;background:var(--bg3);border-radius:12px;padding:4px;margin-bottom:14px}
+.type-btn{flex:1;text-align:center;padding:9px;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;transition:all 0.2s;color:var(--text2)}
+.type-btn.active-out{background:var(--red);color:white}
+.type-btn.active-in{background:var(--green);color:white}
+
+/* ===== OVERVIEW ROWS ===== */
+.ov-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.ov-row:last-child{border-bottom:none}
+.ov-label{font-size:13px;color:var(--text2)}
+.ov-val{font-family:var(--font-head);font-size:14px;font-weight:700}
+
+/* ===== SETTINGS ===== */
+.settings-item{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.si-info .si-title{font-size:14px;font-weight:700}
+.si-info .si-sub{font-size:11px;color:var(--text2);margin-top:3px}
+.si-btn{background:var(--gold);color:#000;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:var(--font-body)}
+.si-btn.danger{background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3)}
+.si-btn.blue{background:rgba(96,165,250,0.15);color:var(--blue);border:1px solid rgba(96,165,250,0.3)}
+.si-btn.green{background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.3)}
+
+/* ===== BOTTOM NAV ===== */
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--bg2);border-top:1px solid var(--border);display:flex;z-index:150;padding-bottom:env(safe-area-inset-bottom)}
+.nav-btn{flex:1;padding:10px 2px 8px;text-align:center;cursor:pointer;transition:all 0.2s;color:var(--text3);font-family:var(--font-head);font-size:9px;font-weight:600}
+.nav-btn.active{color:var(--gold)}
+.nav-icon{font-size:17px;display:block;margin-bottom:2px}
+
+/* ===== TOAST ===== */
+.toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:11px 20px;font-size:13px;font-weight:700;color:var(--text);z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+
+/* ===== EMPTY ===== */
+.empty{text-align:center;padding:36px 20px;color:var(--text3)}
+.empty-icon{font-size:44px;margin-bottom:10px}
+.empty-text{font-size:13px}
+
+/* ===== BUDGET BAR ===== */
+.budget-bar-wrap{margin-top:10px}
+.budget-bar-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:5px}
+.budget-progress{background:var(--bg3);border-radius:99px;height:8px;overflow:hidden}
+.budget-fill{height:100%;border-radius:99px;transition:width 0.5s}
+
+/* ===== EMI HISTORY ===== */
+.emi-history-toggle{font-size:11px;color:var(--text3);cursor:pointer;text-decoration:underline;margin-top:6px;display:inline-block}
+.emi-history{display:none;margin-top:8px;background:var(--bg3);border-radius:10px;padding:10px;max-height:120px;overflow-y:auto}
+.emi-history.open{display:block}
+.emi-h-item{font-size:11px;color:var(--text2);padding:3px 0;border-bottom:1px solid var(--border)}
+.emi-h-item:last-child{border-bottom:none}
+
+/* ===== COMPLETION BANNER ===== */
+.loan-completed-banner{background:linear-gradient(135deg,rgba(34,197,94,0.1),rgba(96,165,250,0.1));border:1px solid rgba(34,197,94,0.3);border-radius:10px;padding:10px 14px;text-align:center;font-size:13px;font-weight:700;color:var(--green);margin-bottom:10px}
+
+/* ===== UPCOMING EMI CALENDAR ===== */
+.emi-calendar-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.emi-cal-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.emi-cal-item:last-child{border-bottom:none}
+.emi-cal-date-box{background:var(--bg3);border-radius:10px;padding:6px 10px;text-align:center;min-width:48px;flex-shrink:0}
+.emi-cal-day{font-family:var(--font-head);font-size:18px;font-weight:800;line-height:1}
+.emi-cal-month{font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;margin-top:1px}
+.emi-cal-info{flex:1;min-width:0}
+.emi-cal-name{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.emi-cal-sub{font-size:10px;color:var(--text2);margin-top:2px}
+.emi-cal-right{text-align:right;flex-shrink:0}
+.emi-cal-amount{font-family:var(--font-head);font-size:14px;font-weight:800;color:var(--amber)}
+.emi-cal-days-badge{display:inline-block;border-radius:20px;padding:2px 8px;font-size:9px;font-weight:700;margin-top:3px}
+.badge-today{background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3)}
+.badge-urgent{background:rgba(239,68,68,0.1);color:var(--red)}
+.badge-soon{background:rgba(251,146,60,0.1);color:var(--amber)}
+.badge-ok{background:rgba(34,197,94,0.1);color:var(--green)}
+
+/* ===== LOAN END DATE ===== */
+.loan-dates-row{display:flex;gap:10px;margin-bottom:10px;padding:8px 10px;background:var(--bg3);border-radius:10px}
+.loan-date-item{flex:1;text-align:center}
+.loan-date-label{font-size:8px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:3px}
+.loan-date-val{font-size:11px;font-weight:700;color:var(--text2)}
+
+/* ===== UDHAR SECTION ===== */
+.udhar-tabs{display:flex;background:var(--bg3);border-radius:12px;padding:4px;margin-bottom:16px}
+.udhar-tab{flex:1;text-align:center;padding:9px 6px;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;transition:all 0.2s;color:var(--text2);font-family:var(--font-head)}
+.udhar-tab.active-diya{background:var(--green);color:#000}
+.udhar-tab.active-liya{background:var(--purple);color:#fff}
+.udhar-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;position:relative;overflow:hidden}
+.udhar-card.cleared{border-color:rgba(34,197,94,0.4);opacity:0.75}
+.udhar-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px}
+.udhar-card.diya::before{background:var(--green)}
+.udhar-card.liya::before{background:var(--purple)}
+.udhar-name{font-family:var(--font-head);font-size:17px;font-weight:700}
+.udhar-meta{font-size:10px;color:var(--text2);margin-top:2px}
+.udhar-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0}
+.udhar-stat{background:var(--bg3);border-radius:10px;padding:8px 10px;text-align:center}
+.udhar-stat-label{font-size:8px;color:var(--text3);font-weight:700;text-transform:uppercase;margin-bottom:3px}
+.udhar-stat-val{font-family:var(--font-head);font-size:14px;font-weight:700}
+.udhar-pay-btn{background:var(--green);color:#000;border:none;border-radius:8px;padding:6px 14px;font-size:11px;font-weight:800;cursor:pointer;font-family:var(--font-body)}
+.udhar-pay-btn.liya-btn{background:var(--purple)}
+.udhar-del-btn{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;color:var(--text3)}
+.pay-quick-btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.pay-quick{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;color:var(--text2)}
+.pay-quick:active{background:var(--gold);color:#000;border-color:var(--gold)}
+
+/* ===== RD SECTION ===== */
+.rd-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;position:relative;overflow:hidden}
+.rd-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px;background:linear-gradient(180deg,var(--cyan),var(--blue))}
+.rd-card.rd-matured::before{background:linear-gradient(180deg,var(--green),#4ade80)}
+.rd-card.rd-matured{border-color:rgba(34,197,94,0.35);opacity:0.8}
+.rd-name{font-family:var(--font-head);font-size:17px;font-weight:700}
+.rd-meta{font-size:10px;color:var(--text2);margin-top:2px}
+.rd-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0}
+.rd-stat-label{font-size:8px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:3px}
+.rd-stat-val{font-family:var(--font-head);font-size:14px;font-weight:700}
+.rd-installment-box{background:rgba(34,211,238,0.07);border:1px solid rgba(34,211,238,0.2);border-radius:10px;padding:8px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.rd-history{display:none;margin-top:8px;background:var(--bg3);border-radius:10px;padding:10px;max-height:130px;overflow-y:auto}
+.rd-history.open{display:block}
+.rd-h-item{font-size:11px;color:var(--text2);padding:3px 0;border-bottom:1px solid var(--border)}
+.rd-h-item:last-child{border-bottom:none}
+.rd-maturity-banner{background:linear-gradient(135deg,rgba(34,197,94,0.12),rgba(34,211,238,0.12));border:1px solid rgba(34,197,94,0.3);border-radius:10px;padding:10px 14px;text-align:center;font-size:13px;font-weight:700;color:var(--green);margin-bottom:10px}
+.pay-rd-btn{background:var(--cyan);color:#000;border:none;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer;font-family:var(--font-body);transition:all 0.2s;white-space:nowrap}
+.pay-rd-btn:active{transform:scale(0.95)}
+/* ===== PWA INSTALL BANNER ===== */
+.install-banner{background:linear-gradient(135deg,#1a3a1a,#0d2a0d);border:1px solid rgba(34,197,94,0.3);border-radius:var(--radius);padding:16px;margin-bottom:14px;display:none}
+.install-banner.show{display:block}
+.install-banner-title{font-family:var(--font-head);font-size:16px;font-weight:800;color:var(--green);margin-bottom:6px}
+.install-banner-sub{font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.5}
+.install-main-btn{background:var(--green);color:#000;border:none;border-radius:10px;padding:11px 20px;font-family:var(--font-head);font-size:14px;font-weight:800;cursor:pointer;width:100%;margin-bottom:6px}
+.install-dismiss{font-size:11px;color:var(--text3);text-align:center;cursor:pointer;padding:4px}
+.ios-steps{background:var(--bg3);border-radius:10px;padding:12px;margin-top:10px}
+.ios-step{font-size:12px;color:var(--text2);padding:4px 0;line-height:1.4}
+
+/* ===== CATEGORY CHART ===== */
+.cat-chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.cat-chart-title{font-family:var(--font-head);font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px}
+.cat-bar-item{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.cat-bar-icon{font-size:16px;flex-shrink:0;width:22px;text-align:center}
+.cat-bar-label{font-size:11px;color:var(--text2);width:56px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cat-bar-track{flex:1;background:var(--bg3);border-radius:99px;height:7px;overflow:hidden}
+.cat-bar-fill{height:100%;border-radius:99px;transition:width 0.6s ease}
+.cat-bar-val{font-family:var(--font-head);font-size:11px;font-weight:700;color:var(--text);text-align:right;min-width:46px}
+/* ===== SEARCH BOX ===== */
+.search-wrap{position:relative;margin-bottom:10px}
+.search-input{width:100%;background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:10px 14px 10px 38px;color:var(--text);font-family:var(--font-body);font-size:14px;outline:none;transition:border-color 0.2s;-webkit-appearance:none}
+.search-input:focus{border-color:var(--gold)}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none}
+.search-clear{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:14px;cursor:pointer;color:var(--text3);background:none;border:none;padding:2px;display:none}
+/* ===== SAVINGS CARD ===== */
+.savings-card{background:linear-gradient(135deg,rgba(34,197,94,0.08),rgba(96,165,250,0.08));border:1px solid rgba(34,197,94,0.25);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.savings-amount{font-family:var(--font-head);font-size:26px;font-weight:800;color:var(--green);text-align:center;margin:4px 0 2px}
+.savings-amount.neg{color:var(--red)}
+/* ===== INSTALL GUIDE ===== */
+.install-guide-card{background:linear-gradient(135deg,#0d2a1a,#1a3a0d);border:1.5px solid rgba(34,197,94,0.35);border-radius:var(--radius);padding:18px;margin-bottom:14px}
+.install-platform{background:rgba(0,0,0,0.25);border-radius:10px;padding:12px;margin-bottom:10px}
+.install-platform-title{font-size:12px;font-weight:800;color:var(--gold);margin-bottom:8px}
+.install-step{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;font-size:12px;color:var(--text2);line-height:1.4}
+.install-step-num{background:var(--gold);color:#000;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0;margin-top:1px}
+/* ===== STANDALONE MODE ===== */
+@media all and (display-mode: standalone){
+  body{padding-top: env(safe-area-inset-top)}
+  .header{padding-top: calc(16px + env(safe-area-inset-top))}
+  .bottom-nav{padding-bottom: calc(8px + env(safe-area-inset-bottom))}
+}
+
+/* ===== SPLASH OVERLAY ===== */
+#splashOverlay{position:fixed;inset:0;z-index:999;background:linear-gradient(160deg,#0d1117 0%,#0a1628 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;transition:opacity 0.5s}
+#splashOverlay.fade{opacity:0;pointer-events:none}
+.splash-icon{font-size:64px;animation:iconPulse 1.5s infinite}
+.splash-title{font-family:var(--font-head);font-size:32px;font-weight:800;color:var(--gold)}
+.splash-sub{font-size:13px;color:var(--text3)}
+@keyframes iconPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+</style>
+</head>
+<body>
+
+<!-- ===== SPLASH SCREEN ===== -->
+<div id="splashOverlay">
+  <div class="splash-icon">💰</div>
+  <div class="splash-title">Kharcha Manager</div>
+  <div class="splash-sub">मेरा बजट – Loading...</div>
+</div>
+
+<!-- ===== PIN SCREEN ===== -->
+<div class="pin-screen" id="pinScreen">
+  <div class="pin-logo">💰 Kharcha</div>
+  <div class="pin-tagline">मेरा बजट – Completely Private</div>
+  <div class="pin-sub" id="pinSubText">PIN डालें</div>
+  <div class="pin-dots" id="pinDots">
+    <div class="pin-dot" id="d0"></div><div class="pin-dot" id="d1"></div>
+    <div class="pin-dot" id="d2"></div><div class="pin-dot" id="d3"></div>
+  </div>
+  <div class="pin-error" id="pinError"></div>
+  <div class="pin-hint" id="pinHint"></div>
+  <div class="pin-keypad">
+    <div class="pin-key" onclick="pinKey('1')">1</div>
+    <div class="pin-key" onclick="pinKey('2')">2</div>
+    <div class="pin-key" onclick="pinKey('3')">3</div>
+    <div class="pin-key" onclick="pinKey('4')">4</div>
+    <div class="pin-key" onclick="pinKey('5')">5</div>
+    <div class="pin-key" onclick="pinKey('6')">6</div>
+    <div class="pin-key" onclick="pinKey('7')">7</div>
+    <div class="pin-key" onclick="pinKey('8')">8</div>
+    <div class="pin-key" onclick="pinKey('9')">9</div>
+    <div class="pin-key special" onclick="pinClear()">✕</div>
+    <div class="pin-key" onclick="pinKey('0')">0</div>
+    <div class="pin-key special" onclick="pinBack()">⌫</div>
+  </div>
+  <div class="pin-attempts" id="pinAttempts"></div>
+</div>
+
+<!-- ===== HEADER ===== -->
+<div class="header">
+  <div>
+    <div class="header-title">💰 Kharcha Manager <span style="font-size:11px;background:rgba(246,201,14,0.15);border:1px solid rgba(246,201,14,0.3);border-radius:20px;padding:2px 7px;vertical-align:middle">v4</span></div>
+    <div class="header-sub" id="headerSub">मेरा बजट – सब Private रहेगा</div>
+  </div>
+  <div class="header-right">
+    <button class="lock-btn" onclick="lockApp()">🔒</button>
+  </div>
+</div>
+
+<!-- ===== TABS ===== -->
+<div class="tabs">
+  <div class="tab-btn active" onclick="switchTab('overview')" id="tab-overview"><span class="tab-icon">📊</span>Overview</div>
+  <div class="tab-btn" onclick="switchTab('loans')" id="tab-loans"><span class="tab-icon">🏦</span>Loans</div>
+  <div class="tab-btn" onclick="switchTab('rd')" id="tab-rd"><span class="tab-icon">🏧</span>RD</div>
+  <div class="tab-btn" onclick="switchTab('udhar')" id="tab-udhar"><span class="tab-icon">🤝</span>Udhar</div>
+  <div class="tab-btn" onclick="switchTab('expenses')" id="tab-expenses"><span class="tab-icon">💸</span>Kharcha</div>
+  <div class="tab-btn" onclick="switchTab('settings')" id="tab-settings"><span class="tab-icon">⚙️</span>Settings</div>
+</div>
+
+<!-- ===== OVERVIEW PAGE ===== -->
+<div class="page active" id="page-overview">
+  <div class="sec-head" style="margin-top:6px">
+    <div class="sec-title">📋 Loan Summary</div>
+  </div>
+  <div class="summary-grid">
+    <div class="sum-card c-gold">
+      <div class="sum-label">Total Approved</div>
+      <div class="sum-value gold" id="ov-totalApproved">₹0</div>
+      <div class="sum-sub">Sanctioned Amount</div>
+    </div>
+    <div class="sum-card c-red">
+      <div class="sum-label">Balance Due</div>
+      <div class="sum-value red" id="ov-totalBalance">₹0</div>
+      <div class="sum-sub">Remaining EMIs</div>
+    </div>
+    <div class="sum-card c-blue">
+      <div class="sum-label">Monthly EMI</div>
+      <div class="sum-value blue" id="ov-totalEMI">₹0</div>
+      <div class="sum-sub">Total / Month</div>
+    </div>
+    <div class="sum-card c-purple">
+      <div class="sum-label">Active Loans</div>
+      <div class="sum-value purple" id="ov-loanCount">0</div>
+      <div class="sum-sub">Total Loans</div>
+    </div>
+  </div>
+
+  <div class="sec-head">
+    <div class="sec-title" id="ov-month-title">💸 This Month</div>
+  </div>
+  <div class="month-bar" id="ovMonthBar"></div>
+  <div class="summary-grid">
+    <div class="sum-card c-red">
+      <div class="sum-label">Total Spent</div>
+      <div class="sum-value red" id="ov-spent">₹0</div>
+      <div class="sum-sub">Expenses</div>
+    </div>
+    <div class="sum-card c-green">
+      <div class="sum-label">Income</div>
+      <div class="sum-value green" id="ov-income">₹0</div>
+      <div class="sum-sub">This Month</div>
+    </div>
+  </div>
+
+  <!-- Budget Bar -->
+  <div class="wide-card" id="budgetCard" style="display:none">
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+      <span style="font-size:12px;color:var(--text2);font-weight:700">Monthly Budget</span>
+      <span style="font-size:12px;font-weight:700" id="budgetPctText">0%</span>
+    </div>
+    <div class="budget-progress"><div class="budget-fill" id="budgetFill"></div></div>
+    <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--text3)">
+      <span>Spent: <span id="budgetSpent" style="color:var(--red);font-weight:700">₹0</span></span>
+      <span>Budget: <span id="budgetLimit" style="color:var(--gold);font-weight:700">₹0</span></span>
+      <span>Left: <span id="budgetLeft" style="font-weight:700">₹0</span></span>
+    </div>
+  </div>
+
+  <!-- Net Balance -->
+  <div class="wide-card">
+    <div class="ov-row"><div class="ov-label">💚 Income</div><div class="ov-val green" id="ov2-income">₹0</div></div>
+    <div class="ov-row"><div class="ov-label">🔴 Expenses</div><div class="ov-val red" id="ov2-spent">₹0</div></div>
+    <div class="ov-row"><div class="ov-label">🏦 EMI (Paid This Month)</div><div class="ov-val amber" id="ov2-emi" style="color:var(--amber)">₹0</div></div>
+    <div class="ov-row"><div class="ov-label" style="font-weight:800;color:var(--text)">💰 Net Balance</div><div class="ov-val" id="ov2-net">₹0</div></div>
+  </div>
+
+  <!-- Savings This Month -->
+  <div class="savings-card" id="savingsCard">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--green)">💰 Iss Mahine Bacha</div>
+      <div style="font-size:10px;color:var(--text3)" id="savingsLabel">Income – Kharcha – EMI</div>
+    </div>
+    <div class="savings-amount" id="savingsAmount">₹0</div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-bottom:8px" id="savingsHint">Pehle income add karein</div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06)">
+      <span style="color:var(--text2)">💚 Income: <span id="sv-income" style="color:var(--green);font-weight:700">₹0</span></span>
+      <span style="color:var(--text2)">🔴 Kharcha: <span id="sv-spent" style="color:var(--red);font-weight:700">₹0</span></span>
+      <span style="color:var(--text2);display:none">🏦 EMI: <span id="sv-emi" style="color:var(--amber);font-weight:700">₹0</span></span>
+    </div>
+  </div>
+
+  <!-- All Time Total Savings -->
+  <div class="wide-card" style="background:linear-gradient(135deg,rgba(246,201,14,0.06),rgba(96,165,250,0.06));border:1px solid rgba(246,201,14,0.2)">
+    <div style="font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--gold);margin-bottom:10px">🏆 Sabhi Mahine Ki Total Savings</div>
+    <div style="font-family:var(--font-head);font-size:28px;font-weight:800;text-align:center;margin:4px 0 6px" id="allTimeSavingsAmount">₹0</div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-bottom:10px" id="allTimeSavingsHint"></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06)">
+      <span style="color:var(--text2)">💚 Total Income: <span id="at-income" style="color:var(--green);font-weight:700">₹0</span></span>
+      <span style="color:var(--text2)">🔴 Total Kharcha: <span id="at-spent" style="color:var(--red);font-weight:700">₹0</span></span>
+    </div>
+  </div>
+
+  <!-- Category Breakdown -->
+  <div class="cat-chart-wrap" id="catChartWrap" style="display:none">
+    <div class="cat-chart-title">📊 Category Breakdown – This Month</div>
+    <div id="catChartBars"></div>
+  </div>
+
+  <!-- Upcoming EMI Calendar -->
+  <div class="sec-head">
+    <div class="sec-title">🏧 RD Summary</div>
+  </div>
+  <div class="wide-card" id="rdOverviewCard">
+    <div class="ov-row"><div class="ov-label">💰 Total Invested</div><div class="ov-val cyan" id="ov-rd-invested" style="color:var(--cyan)">₹0</div></div>
+    <div class="ov-row"><div class="ov-label">📈 Expected Maturity</div><div class="ov-val green" id="ov-rd-maturity">₹0</div></div>
+    <div class="ov-row"><div class="ov-label">🏧 Monthly Installments</div><div class="ov-val blue" id="ov-rd-monthly">₹0</div></div>
+    <div class="ov-row"><div class="ov-label">🎯 Interest Profit</div><div class="ov-val gold" id="ov-rd-profit">₹0</div></div>
+  </div>
+
+  <div class="sec-head">
+    <div class="sec-title">📅 Upcoming EMI Dates</div>
+  </div>
+  <div class="emi-calendar-card" id="emiCalendarCard">
+    <div class="empty" style="padding:20px"><div class="empty-icon" style="font-size:30px">📅</div><div class="empty-text">Koi active loan nahi hai</div></div>
+  </div>
+</div>
+
+<!-- ===== LOANS PAGE ===== -->
+<div class="page" id="page-loans">
+  <div class="sec-head" style="margin-top:6px">
+    <div class="sec-title">🏦 Mere Loans</div>
+    <button class="add-btn" onclick="openLoanModal()">＋ Add Loan</button>
+  </div>
+  <!-- Global progress -->
+  <div class="wide-card" style="margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="font-size:12px;color:var(--text2);font-weight:700">Total Loan Repayment Progress</div>
+      <div id="loan-pct" style="font-family:var(--font-head);font-size:14px;color:var(--gold);font-weight:800">0%</div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill pf-good" id="loan-global-bar" style="width:0%"></div></div>
+    <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--text2)">
+      <span>Paid: <span id="lbar-paid" style="color:var(--green);font-weight:700">₹0</span></span>
+      <span>Balance: <span id="lbar-bal" style="color:var(--red);font-weight:700">₹0</span></span>
+    </div>
+    <!-- Summary row -->
+    <div style="display:flex;gap:10px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
+      <div style="flex:1;text-align:center">
+        <div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase">Approved</div>
+        <div style="font-family:var(--font-head);font-size:15px;font-weight:800;color:var(--gold)" id="ls-approved">₹0</div>
+      </div>
+      <div style="flex:1;text-align:center">
+        <div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase">Monthly EMI</div>
+        <div style="font-family:var(--font-head);font-size:15px;font-weight:800;color:var(--amber)" id="ls-emi">₹0</div>
+      </div>
+      <div style="flex:1;text-align:center">
+        <div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase">Loans</div>
+        <div style="font-family:var(--font-head);font-size:15px;font-weight:800;color:var(--purple)" id="ls-count">0</div>
+      </div>
+    </div>
+  </div>
+  <div id="loans-container"></div>
+</div>
+
+<!-- ===== EXPENSES PAGE ===== -->
+<div class="page" id="page-expenses">
+  <div class="sec-head" style="margin-top:6px">
+    <div class="sec-title">💸 Kharcha Log</div>
+    <button class="add-btn" onclick="openExpModal()">＋ Add</button>
+  </div>
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input class="search-input" id="expSearch" placeholder="Search karo..." oninput="onExpSearch(this.value)" autocomplete="off">
+    <button class="search-clear" id="expSearchClear" onclick="clearExpSearch()">✕</button>
+  </div>
+  <div class="month-bar" id="monthBar"></div>
+  <div class="summary-grid" style="margin-bottom:10px">
+    <div class="sum-card c-red"><div class="sum-label">Spent</div><div class="sum-value red" id="exp-spent">₹0</div></div>
+    <div class="sum-card c-green"><div class="sum-label">Income</div><div class="sum-value green" id="exp-income">₹0</div></div>
+  </div>
+  <!-- Total Savings + Expenses Summary -->
+  <div class="wide-card" id="expSummaryCard" style="margin-bottom:12px;padding:12px 14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--text)">📊 Monthly Summary</span>
+      <span style="font-size:10px;color:var(--text3)" id="expSummaryMonth"></span>
+    </div>
+    <div class="ov-row"><div class="ov-label">💚 Income</div><div class="ov-val" style="color:var(--green)" id="exp-sum-income">₹0</div></div>
+    <div class="ov-row"><div class="ov-label">🔴 Total Expenses</div><div class="ov-val" style="color:var(--red)" id="exp-sum-spent">₹0</div></div>
+    <div class="ov-row"><div class="ov-label">🏦 EMI Paid This Month</div><div class="ov-val" style="color:var(--amber)" id="exp-sum-emi">₹0</div></div>
+    <div class="ov-row" style="border-bottom:none">
+      <div class="ov-label" style="font-weight:800;color:var(--text)">💰 Total Savings</div>
+      <div class="ov-val" id="exp-sum-savings" style="color:var(--green)">₹0</div>
+    </div>
+  </div>
+  <div id="expenses-container"></div>
+</div>
+
+<!-- ===== SETTINGS PAGE ===== -->
+<div class="page" id="page-settings">
+  <div class="sec-title" style="margin-top:10px;margin-bottom:14px">⚙️ Settings</div>
+
+  <div class="settings-item" id="installSettingRow" style="display:none">
+    <div class="si-info">
+      <div class="si-title">📲 App Install Karein</div>
+      <div class="si-sub">Home screen par add karein</div>
+    </div>
+    <button class="si-btn green" onclick="triggerInstall()">Install</button>
+  </div>
+
+  <div class="settings-item">
+    <div class="si-info">
+      <div class="si-title">🔑 PIN Change करें</div>
+      <div class="si-sub">Apna 4-digit PIN badlein</div>
+    </div>
+    <button class="si-btn" onclick="openPinChangeModal()">Change</button>
+  </div>
+
+  <div class="settings-item">
+    <div class="si-info">
+      <div class="si-title">💰 Monthly Budget</div>
+      <div class="si-sub" id="budgetSettingSub">Set नहीं है</div>
+    </div>
+    <button class="si-btn" onclick="openBudgetModal()">Set करें</button>
+  </div>
+
+  <div class="settings-item">
+    <div class="si-info">
+      <div class="si-title">📤 Data Export (Backup)</div>
+      <div class="si-sub">JSON file download karein</div>
+    </div>
+    <button class="si-btn blue" onclick="exportData()">Export</button>
+  </div>
+
+  <div class="settings-item">
+    <div class="si-info">
+      <div class="si-title">📥 Data Import (Restore)</div>
+      <div class="si-sub">Backup file se restore karein</div>
+    </div>
+    <button class="si-btn green" onclick="document.getElementById('importFile').click()">Import</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+  </div>
+
+  <div class="settings-item">
+    <div class="si-info">
+      <div class="si-title">🗑️ Sab Delete Karein</div>
+      <div class="si-sub">Loans + Expenses sab clear</div>
+    </div>
+    <button class="si-btn danger" onclick="clearAllData()">Delete</button>
+  </div>
+
+  <div style="text-align:center;margin-top:0;color:var(--text3);font-size:12px;line-height:1.8;display:none">
+    <div>💰 Kharcha Manager v3.0</div>
+    <div>Aapka data sirf aapke phone mein hai</div>
+    <div style="margin-top:4px">Made with ❤️ for you</div>
+  </div>
+
+  <!-- Always Visible Install Guide -->
+  <div class="install-guide-card">
+    <div style="font-family:var(--font-head);font-size:16px;font-weight:800;color:var(--green);margin-bottom:14px">📲 App Install Kaise Karein</div>
+    <div class="install-platform">
+      <div class="install-platform-title">🤖 Android (Chrome Browser)</div>
+      <div class="install-step"><div class="install-step-num">1</div><div>Chrome mein yeh page kholo</div></div>
+      <div class="install-step"><div class="install-step-num">2</div><div>⋮ (Teen dots) upar right mein tap karo</div></div>
+      <div class="install-step"><div class="install-step-num">3</div><div>"Add to Home screen" ya "Install app" choose karo</div></div>
+      <div class="install-step"><div class="install-step-num">4</div><div>"Add" / "Install" confirm karo – Done! ✅</div></div>
+    </div>
+    <div class="install-platform">
+      <div class="install-platform-title">🍎 iPhone / iPad (Safari)</div>
+      <div class="install-step"><div class="install-step-num">1</div><div>Safari browser mein yeh page kholo</div></div>
+      <div class="install-step"><div class="install-step-num">2</div><div>Neeche Share button <strong style="color:var(--gold)">⬆ (box + arrow)</strong> tap karo</div></div>
+      <div class="install-step"><div class="install-step-num">3</div><div>"Add to Home Screen" scroll karke dhundho aur tap karo</div></div>
+      <div class="install-step"><div class="install-step-num">4</div><div>Top-right mein "Add" tap karo – Done! ✅</div></div>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-top:4px;line-height:1.5">💡 Tip: Pehle is page ko bookmark karo, phir install karo</div>
+  </div>
+
+  <div style="text-align:center;margin-top:10px;color:var(--text3);font-size:12px;line-height:1.8">
+    <div>💰 Kharcha Manager <span style="background:rgba(246,201,14,0.15);border:1px solid rgba(246,201,14,0.4);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;color:var(--gold)">v4.0</span></div>
+    <div>Aapka data sirf aapke phone mein hai</div>
+    <div style="margin-top:4px">Made with ❤️ for you</div>
+  </div>
+
+  <!-- Legacy iOS Add to Home Screen Guide (hidden, kept for auto-detect) -->
+  <div id="iosInstallGuide" style="display:none"></div>
+</div>
+
+<!-- ===== BOTTOM NAV ===== -->
+<div class="bottom-nav">
+  <div class="nav-btn active" onclick="switchTab('overview')" id="nav-overview"><span class="nav-icon">📊</span>Overview</div>
+  <div class="nav-btn" onclick="switchTab('loans')" id="nav-loans"><span class="nav-icon">🏦</span>Loans</div>
+  <div class="nav-btn" onclick="switchTab('rd')" id="nav-rd"><span class="nav-icon">🏧</span>RD</div>
+  <div class="nav-btn" onclick="switchTab('udhar')" id="nav-udhar"><span class="nav-icon">🤝</span>Udhar</div>
+  <div class="nav-btn" onclick="switchTab('expenses')" id="nav-expenses"><span class="nav-icon">💸</span>Kharcha</div>
+  <div class="nav-btn" onclick="switchTab('settings')" id="nav-settings"><span class="nav-icon">⚙️</span>Settings</div>
+</div>
+
+<!-- ===== RD PAGE ===== -->
+<div class="page" id="page-rd">
+  <div class="sec-head" style="margin-top:6px">
+    <div class="sec-title">🏧 Recurring Deposits</div>
+    <button class="add-btn" onclick="openRdModal()" style="background:var(--cyan);color:#000">＋ Add RD</button>
+  </div>
+  <!-- RD Summary -->
+  <div class="summary-grid" style="margin-bottom:12px">
+    <div class="sum-card c-blue">
+      <div class="sum-label">Total Invested</div>
+      <div class="sum-value cyan" id="rd-total-invested">₹0</div>
+      <div class="sum-sub">Sab RDs mein</div>
+    </div>
+    <div class="sum-card c-green">
+      <div class="sum-label">Maturity Value</div>
+      <div class="sum-value green" id="rd-total-maturity">₹0</div>
+      <div class="sum-sub">Expected return</div>
+    </div>
+    <div class="sum-card c-gold">
+      <div class="sum-label">Total Profit</div>
+      <div class="sum-value gold" id="rd-total-profit">₹0</div>
+      <div class="sum-sub">Interest earned</div>
+    </div>
+    <div class="sum-card c-purple">
+      <div class="sum-label">Monthly Installment</div>
+      <div class="sum-value purple" id="rd-monthly-total">₹0</div>
+      <div class="sum-sub">Har mahine</div>
+    </div>
+  </div>
+  <div id="rd-container">
+    <div class="empty"><div class="empty-icon">🏧</div><div class="empty-text">Koi RD add nahin kiya<br>+ Add RD par click karein</div></div>
+  </div>
+</div>
+
+<!-- ===== UDHAR PAGE ===== -->
+<div class="page" id="page-udhar">
+  <!-- Sub-tab toggle -->
+  <div class="udhar-tabs" style="margin-top:8px">
+    <div class="udhar-tab active-diya" id="utab-diya" onclick="switchUdharTab('diya')">💸 Diya Hua (जो मिलना है)</div>
+    <div class="udhar-tab" id="utab-liya" onclick="switchUdharTab('liya')">🤝 Liya Hua (जो देना है)</div>
+  </div>
+
+  <!-- Diya section -->
+  <div id="udhar-diya-section">
+    <div class="sec-head">
+      <div class="sec-title">💸 Diya Hua Udhar</div>
+      <button class="add-btn" onclick="openUdharModal('diya')">＋ Add</button>
+    </div>
+    <div class="summary-grid" style="margin-bottom:12px">
+      <div class="sum-card c-green">
+        <div class="sum-label">Total Diya</div>
+        <div class="sum-value green" id="udhar-diya-total">₹0</div>
+        <div class="sum-sub">Jo diya tha</div>
+      </div>
+      <div class="sum-card c-gold">
+        <div class="sum-label">Baaki Lena Hai</div>
+        <div class="sum-value gold" id="udhar-diya-baaki">₹0</div>
+        <div class="sum-sub">Abhi tak nahi aaya</div>
+      </div>
+    </div>
+    <div id="udhar-diya-container"></div>
+  </div>
+
+  <!-- Liya section -->
+  <div id="udhar-liya-section" style="display:none">
+    <div class="sec-head">
+      <div class="sec-title">🤝 Liya Hua Udhar</div>
+      <button class="add-btn" onclick="openUdharModal('liya')" style="background:var(--purple);color:#fff">＋ Add</button>
+    </div>
+    <div class="summary-grid" style="margin-bottom:12px">
+      <div class="sum-card c-purple">
+        <div class="sum-label">Total Liya</div>
+        <div class="sum-value purple" id="udhar-liya-total">₹0</div>
+        <div class="sum-sub">Jo liya tha</div>
+      </div>
+      <div class="sum-card c-red">
+        <div class="sum-label">Baaki Dena Hai</div>
+        <div class="sum-value red" id="udhar-liya-baaki">₹0</div>
+        <div class="sum-sub">Jo abhi dena baaki</div>
+      </div>
+    </div>
+    <div id="udhar-liya-container"></div>
+  </div>
+</div>
+
+<!-- ===== RD MODAL ===== -->
+<div class="modal-overlay" id="rdModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="rdModalTitle">🏧 RD Add करें</div>
+      <div class="close-btn" onclick="closeRdModal()">✕</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Bank / Company Name *</label>
+      <input class="form-input" id="rd-bank" placeholder="e.g. SBI, Post Office, HDFC...">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">RD Type</label>
+        <select class="form-input" id="rd-type">
+          <option>Bank RD</option>
+          <option>Post Office RD</option>
+          <option>Corporate RD</option>
+          <option>NBFC RD</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Account / Ref No.</label>
+        <input class="form-input" id="rd-accno" placeholder="Optional">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Monthly Installment *</label>
+        <input class="form-input" id="rd-installment" type="number" placeholder="₹ Amount" oninput="calcRdPreview()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tenure (Months) *</label>
+        <input class="form-input" id="rd-tenure" type="number" placeholder="e.g. 12, 24" oninput="calcRdPreview()">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Interest Rate (% p.a.) *</label>
+        <input class="form-input" id="rd-rate" type="number" placeholder="e.g. 7.5" step="0.1" oninput="calcRdPreview()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Installments Paid</label>
+        <input class="form-input" id="rd-paid" type="number" placeholder="0">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Start Date</label>
+        <input class="form-input" id="rd-startdate" type="date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Due Day (1–31)</label>
+        <input class="form-input" id="rd-dueday" type="number" placeholder="e.g. 5" min="1" max="31">
+      </div>
+    </div>
+    <!-- Live Preview Card -->
+    <div id="rdPreviewBox" style="display:none;background:rgba(34,211,238,0.07);border:1px solid rgba(34,211,238,0.25);border-radius:12px;padding:12px;margin-bottom:12px">
+      <div style="font-size:10px;font-weight:700;color:var(--cyan);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">📊 Maturity Preview</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+        <div>
+          <div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase">Invested</div>
+          <div style="font-family:var(--font-head);font-size:14px;font-weight:800;color:var(--gold)" id="prev-invested">₹0</div>
+        </div>
+        <div>
+          <div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase">Interest</div>
+          <div style="font-family:var(--font-head);font-size:14px;font-weight:800;color:var(--green)" id="prev-interest">₹0</div>
+        </div>
+        <div>
+          <div style="font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase">Maturity</div>
+          <div style="font-family:var(--font-head);font-size:14px;font-weight:800;color:var(--cyan)" id="prev-maturity">₹0</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;font-size:10px;color:var(--text2);text-align:center" id="prev-matdate"></div>
+    </div>
+    <!-- Flexi RD Toggle -->
+    <div class="form-group" style="display:flex;align-items:center;gap:10px;background:rgba(34,211,238,0.08);padding:12px;border-radius:10px;border:1px solid rgba(34,211,238,0.2)">
+      <input class="form-input" id="rd-flexi" type="checkbox" style="width:18px;height:18px;cursor:pointer" onchange="toggleFlexiRdFields()">
+      <label class="form-label" style="margin:0;cursor:pointer;flex:1">🎯 Flexi RD (Variable Amount)</label>
+      <span style="font-size:10px;color:var(--text3)">Min-Max</span>
+    </div>
+    
+    <!-- Flexi RD Min/Max Fields -->
+    <div id="rdFlexiFields" style="display:none;background:rgba(34,211,238,0.05);padding:12px;border-radius:10px;border-left:3px solid var(--cyan);margin-bottom:12px">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:10px;font-weight:600">📌 HDFC Flexi RD ke rules:</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Minimum Installment *</label>
+          <input class="form-input" id="rd-min-amount" type="number" placeholder="₹ Min amount">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Maximum Installment *</label>
+          <input class="form-input" id="rd-max-amount" type="number" placeholder="₹ Max amount">
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:8px;font-style:italic">💡 Har month min-max ke beech koi bhi amount de sakte ho. Maturity only invested amount par calculate hogi.</div>
+    </div>
+    
+    <div class="form-group">
+      <label class="form-label">Note (Optional)</label>
+      <input class="form-input" id="rd-note" placeholder="koi note...">
+    </div>
+    <input type="hidden" id="rd-edit-id">
+    <button class="submit-btn" onclick="saveRd()" style="background:var(--cyan);color:#000">✅ Save RD</button>
+  </div>
+</div>
+
+<!-- ===== RD PAY MODAL ===== -->
+<div class="modal-overlay" id="rdPayModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" style="color:var(--cyan)">🏧 Installment Record</div>
+      <div class="close-btn" onclick="closeRdPayModal()">✕</div>
+    </div>
+    <div id="rdPayInfo" style="background:var(--bg3);border-radius:12px;padding:14px;margin-bottom:14px"></div>
+    <div class="form-group">
+      <label class="form-label">Amount</label>
+      <input class="form-input" id="rdp-amount" type="number" placeholder="₹ Installment amount">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Payment Date</label>
+      <input class="form-input" id="rdp-date" type="date">
+    </div>
+    <input type="hidden" id="rdp-id">
+    <button class="submit-btn" onclick="saveRdPayment()" style="background:var(--cyan);color:#000">✅ Installment Mark Paid</button>
+  </div>
+</div>
+<div class="modal-overlay" id="loanModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="loanModalTitle">🏦 Loan Add करें</div>
+      <div class="close-btn" onclick="closeLoanModal()">✕</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Company / Bank Name *</label>
+      <input class="form-input" id="l-company" placeholder="e.g. SBI, HDFC, Bajaj Finance...">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Loan Type</label>
+        <select class="form-input" id="l-type">
+          <option>Personal Loan</option><option>Home Loan</option><option>Car Loan</option>
+          <option>Education Loan</option><option>Business Loan</option><option>Gold Loan</option>
+          <option>Two-Wheeler Loan</option><option>Credit Card Loan</option><option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Account / Ref No.</label>
+        <input class="form-input" id="l-accno" placeholder="Optional">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Approved Amount *</label>
+        <input class="form-input" id="l-approved" type="number" placeholder="₹ Amount">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Disbursed Amount</label>
+        <input class="form-input" id="l-disbursed" type="number" placeholder="₹ Amount">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Monthly EMI *</label>
+        <input class="form-input" id="l-emi" type="number" placeholder="₹ EMI">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Total Tenure (months)</label>
+        <input class="form-input" id="l-tenure" type="number" placeholder="e.g. 24">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">EMI Paid (count)</label>
+        <input class="form-input" id="l-paid" type="number" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Interest Rate (% p.a.)</label>
+        <input class="form-input" id="l-rate" type="number" placeholder="e.g. 12">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Loan Start Date</label>
+        <input class="form-input" id="l-date" type="date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">EMI Due Day (1–31)</label>
+        <input class="form-input" id="l-dueday" type="number" placeholder="e.g. 5" min="1" max="31">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Note (Optional)</label>
+      <input class="form-input" id="l-note" placeholder="koi note...">
+    </div>
+    <input type="hidden" id="l-edit-id">
+    <button class="submit-btn" onclick="saveLoan()">✅ Save Loan</button>
+  </div>
+</div>
+
+<!-- ===== EXPENSE MODAL ===== -->
+<div class="modal-overlay" id="expModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">💸 Kharcha Add</div>
+      <div class="close-btn" onclick="closeExpModal()">✕</div>
+    </div>
+    <div class="type-toggle">
+      <div class="type-btn active-out" id="type-out" onclick="setExpType('out')">🔴 Kharcha (Out)</div>
+      <div class="type-btn" id="type-in" onclick="setExpType('in')">🟢 Income (In)</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Category</label>
+      <div class="cat-grid" id="catGrid"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Amount *</label>
+      <input class="form-input" id="e-amount" type="number" placeholder="₹ Amount">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <input class="form-input" id="e-desc" placeholder="Kya kharcha kiya?">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Date</label>
+      <input class="form-input" id="e-date" type="date">
+    </div>
+    <button class="submit-btn" onclick="saveExpense()">✅ Save</button>
+  </div>
+</div>
+
+<!-- ===== PIN CHANGE MODAL ===== -->
+<div class="modal-overlay" id="pinChangeModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">🔑 PIN Change</div>
+      <div class="close-btn" onclick="closePinChangeModal()">✕</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Purana PIN</label>
+      <input class="form-input" id="pc-old" type="password" maxlength="4" placeholder="****" inputmode="numeric">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Naya PIN (4 digits)</label>
+      <input class="form-input" id="pc-new" type="password" maxlength="4" placeholder="****" inputmode="numeric">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Naya PIN Confirm</label>
+      <input class="form-input" id="pc-conf" type="password" maxlength="4" placeholder="****" inputmode="numeric">
+    </div>
+    <button class="submit-btn" onclick="savePinChange()">✅ PIN Change Karein</button>
+  </div>
+</div>
+
+<!-- ===== UDHAR ADD MODAL ===== -->
+<div class="modal-overlay" id="udharModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="udharModalTitle">💸 Udhar Add करें</div>
+      <div class="close-btn" onclick="closeUdharModal()">✕</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Naam *</label>
+      <input class="form-input" id="u-name" placeholder="e.g. Ramesh Bhai, Papa Ji...">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Total Amount (₹) *</label>
+        <input class="form-input" id="u-total" type="number" placeholder="₹ Kitna">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Wapas Ho Gaya (₹)</label>
+        <input class="form-input" id="u-wapas" type="number" placeholder="0">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input class="form-input" id="u-date" type="date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Expected Wapas</label>
+        <input class="form-input" id="u-expected" type="date">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Note (Optional)</label>
+      <input class="form-input" id="u-note" placeholder="Kyun diya / liya...">
+    </div>
+    <input type="hidden" id="u-mode">
+    <input type="hidden" id="u-edit-id">
+    <button class="submit-btn" id="udharSubmitBtn" onclick="saveUdhar()">✅ Save Karein</button>
+  </div>
+</div>
+
+<!-- ===== UDHAR PAYMENT MODAL ===== -->
+<div class="modal-overlay" id="udharPayModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="udharPayTitle">💰 Payment Record</div>
+      <div class="close-btn" onclick="closeUdharPayModal()">✕</div>
+    </div>
+    <div id="udharPayInfo" style="background:var(--bg3);border-radius:12px;padding:14px;margin-bottom:16px"></div>
+    <div class="form-group">
+      <label class="form-label">Amount (₹) *</label>
+      <input class="form-input" id="up-amount" type="number" placeholder="Kitna wapas aaya / gaya">
+    </div>
+    <div class="pay-quick-btns" id="payQuickBtns"></div>
+    <div class="form-group">
+      <label class="form-label">Date</label>
+      <input class="form-input" id="up-date" type="date">
+    </div>
+    <input type="hidden" id="up-id">
+    <input type="hidden" id="up-mode">
+    <button class="submit-btn" id="udharPaySubmitBtn" onclick="saveUdharPayment()">✅ Payment Record Karein</button>
+  </div>
+</div>
+
+<!-- ===== BUDGET MODAL ===== -->
+<div class="modal-overlay" id="budgetModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">💰 Monthly Budget</div>
+      <div class="close-btn" onclick="closeBudgetModal()">✕</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Monthly Budget Amount (₹)</label>
+      <input class="form-input" id="bgt-amount" type="number" placeholder="e.g. 30000">
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Note: EMI alag se count hogi, yeh sirf aapke daily kharche ke liye hai.</div>
+    <button class="submit-btn" onclick="saveBudget()">✅ Set Budget</button>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== DATA =====
+let DATA = { loans: [], expenses: [], udhar: { diya: [], liya: [] } };
+let PIN = '';
+let BUDGET = 0;
+let pinBuffer = '', pinConfirmBuffer = '', pinMode = 'enter';
+let pinAttempts = 0, pinLocked = false, pinLockTimeout = null;
+let currentExpType = 'out', selectedCat = '', selectedMonth = '', editLoanId = null;
+
+const CATS_OUT = [
+  {id:'food',icon:'🍛',label:'Khana'},{id:'travel',icon:'🚗',label:'Travel'},
+  {id:'shopping',icon:'🛒',label:'Shopping'},{id:'medical',icon:'💊',label:'Medical'},
+  {id:'electricity',icon:'💡',label:'Bijli'},{id:'rent',icon:'🏠',label:'Rent'},
+  {id:'mobile',icon:'📱',label:'Mobile'},{id:'education',icon:'📚',label:'Study'},
+  {id:'fuel',icon:'⛽',label:'Petrol'},{id:'entertainment',icon:'🎬',label:'Enjoy'},
+  {id:'grocery',icon:'🥬',label:'Grocery'},{id:'emi',icon:'🏦',label:'EMI'},
+  {id:'rd',icon:'🏧',label:'RD'},{id:'other',icon:'💰',label:'Other'},
+];
+const CATS_IN = [
+  {id:'salary',icon:'💼',label:'Salary'},{id:'business',icon:'🏪',label:'Business'},
+  {id:'freelance',icon:'💻',label:'Freelance'},{id:'gift',icon:'🎁',label:'Gift'},
+  {id:'interest',icon:'🏦',label:'Interest'},{id:'other',icon:'💰',label:'Other'},
+];
+
+// ===== STORAGE =====
+function save() { try { localStorage.setItem('km_data_v2', JSON.stringify(DATA)); } catch(e){} }
+function load() {
+  try {
+    const d = localStorage.getItem('km_data_v2');
+    if (d) DATA = JSON.parse(d);
+    if (!DATA.udhar) DATA.udhar = { diya: [], liya: [] };
+    if (!DATA.rd) DATA.rd = [];
+    // migrate from old key
+    if (!DATA.loans.length && !DATA.expenses.length) {
+      const old = localStorage.getItem('km_data');
+      if (old) { DATA = JSON.parse(old); if(!DATA.udhar) DATA.udhar={diya:[],liya:[]}; save(); }
+    }
+  } catch(e) {}
+}
+function savePin(p) { localStorage.setItem('km_pin_v2', p); }
+function loadPin() { return localStorage.getItem('km_pin_v2') || localStorage.getItem('km_pin') || ''; }
+function saveBudgetLS(b) { localStorage.setItem('km_budget', b); }
+function loadBudgetLS() { return parseFloat(localStorage.getItem('km_budget')) || 0; }
+
+// ===== FORMAT =====
+function fmt(n) {
+  n = Math.abs(n);
+  if (n >= 1e7) return '₹' + (n/1e7).toFixed(2) + 'Cr';
+  if (n >= 1e5) return '₹' + (n/1e5).toFixed(2) + 'L';
+  if (n >= 1e3) return '₹' + (n/1e3).toFixed(1) + 'K';
+  return '₹' + Math.round(n).toLocaleString('en-IN');
+}
+function fmtFull(n) { return '₹' + Math.round(Math.abs(n)).toLocaleString('en-IN'); }
+function formatDate(d) {
+  if (!d) return '';
+  const dt = new Date(d + 'T00:00:00');
+  return dt.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'});
+}
+function todayStr() { return new Date().toISOString().slice(0,10); }
+function curMonthStr() {
+  const n = new Date();
+  return n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0');
+}
+
+// ===== PIN =====
+function initPin() {
+  PIN = loadPin();
+  pinAttempts = 0; pinLocked = false; pinBuffer = '';
+  updateDots();
+  if (!PIN) {
+    pinMode = 'setup';
+    document.getElementById('pinSubText').textContent = 'Pehli baar – New PIN banayein';
+    document.getElementById('pinHint').textContent = '4 digit PIN set karein';
+  } else {
+    pinMode = 'enter';
+    document.getElementById('pinSubText').textContent = 'PIN डालें';
+    document.getElementById('pinHint').textContent = '';
+  }
+}
+function pinKey(k) {
+  if (pinLocked || pinBuffer.length >= 4) return;
+  pinBuffer += k;
+  updateDots();
+  if (pinBuffer.length === 4) setTimeout(processPIN, 180);
+}
+function pinBack() { if (!pinLocked) { pinBuffer = pinBuffer.slice(0,-1); updateDots(); } }
+function pinClear() { if (!pinLocked) { pinBuffer = ''; updateDots(); } }
+function updateDots() {
+  for (let i=0; i<4; i++) document.getElementById('d'+i).classList.toggle('filled', i < pinBuffer.length);
+}
+function processPIN() {
+  const dots = document.getElementById('pinDots');
+  if (pinMode === 'enter') {
+    if (pinBuffer === PIN) {
+      pinAttempts = 0;
+      document.getElementById('pinScreen').style.display = 'none';
+      load(); BUDGET = loadBudgetLS(); renderAll(); updateHeaderDate();
+    } else {
+      pinAttempts++;
+      dots.classList.add('shake');
+      setTimeout(() => dots.classList.remove('shake'), 400);
+      const left = 5 - pinAttempts;
+      if (pinAttempts >= 5) {
+        pinLocked = true;
+        document.getElementById('pinError').textContent = '🔒 Bahut galat attempts! 30 sec wait karein';
+        document.getElementById('pinAttempts').textContent = '';
+        let sec = 30;
+        const t = setInterval(() => {
+          sec--;
+          document.getElementById('pinAttempts').textContent = `${sec}s mein unlock ho jayega...`;
+          if (sec <= 0) { clearInterval(t); pinLocked = false; pinAttempts = 0; pinBuffer = ''; updateDots(); document.getElementById('pinError').textContent = ''; document.getElementById('pinAttempts').textContent = ''; }
+        }, 1000);
+      } else {
+        document.getElementById('pinError').textContent = `❌ Galat PIN! ${left} attempt bache`;
+        document.getElementById('pinAttempts').textContent = left <= 2 ? `⚠️ ${left} attempts bache` : '';
+      }
+      pinBuffer = ''; updateDots();
+    }
+  } else if (pinMode === 'setup') {
+    if (pinBuffer.length < 4) { pinBuffer=''; updateDots(); return; }
+    pinConfirmBuffer = pinBuffer; pinBuffer = '';
+    pinMode = 'confirm';
+    document.getElementById('pinSubText').textContent = 'PIN confirm karein';
+    document.getElementById('pinHint').textContent = 'Wahi PIN dobara dalein';
+    updateDots();
+  } else if (pinMode === 'confirm') {
+    if (pinBuffer === pinConfirmBuffer) {
+      PIN = pinBuffer; savePin(PIN);
+      document.getElementById('pinScreen').style.display = 'none';
+      load(); BUDGET = loadBudgetLS(); renderAll(); updateHeaderDate();
+      showToast('✅ PIN set ho gaya!');
+    } else {
+      dots.classList.add('shake');
+      setTimeout(() => dots.classList.remove('shake'), 400);
+      document.getElementById('pinError').textContent = '❌ PIN match nahi hua! Firse try karein';
+      pinBuffer = ''; pinConfirmBuffer = ''; pinMode = 'setup';
+      document.getElementById('pinSubText').textContent = 'Naya PIN set karein (4 digits)';
+      document.getElementById('pinHint').textContent = '4 digit PIN set karein';
+      updateDots();
+      setTimeout(() => document.getElementById('pinError').textContent = '', 2500);
+    }
+  }
+}
+function lockApp() {
+  document.getElementById('pinScreen').style.display = 'flex';
+  pinBuffer = ''; pinAttempts = 0; pinLocked = false; pinMode = 'enter';
+  document.getElementById('pinSubText').textContent = 'PIN डालें';
+  document.getElementById('pinError').textContent = '';
+  document.getElementById('pinAttempts').textContent = '';
+  document.getElementById('pinHint').textContent = '';
+  updateDots();
+}
+
+// ===== TABS =====
+const ALL_TABS = ['overview','loans','rd','udhar','expenses','settings'];
+function switchTab(t) {
+  ALL_TABS.forEach(p => {
+    document.getElementById('page-'+p).classList.remove('active');
+    document.getElementById('tab-'+p).classList.remove('active');
+    document.getElementById('nav-'+p).classList.remove('active');
+  });
+  document.getElementById('page-'+t).classList.add('active');
+  document.getElementById('tab-'+t).classList.add('active');
+  document.getElementById('nav-'+t).classList.add('active');
+  if (t === 'expenses') renderExpenses();
+  if (t === 'settings') renderSettings();
+  if (t === 'udhar') renderUdhar();
+  if (t === 'rd') renderRd();
+}
+
+// ===== LOANS =====
+function calcLoan(l) {
+  const tenure = l.tenure || 0;
+  const paid = Math.min(l.paid || 0, tenure || 99999);
+  const rem = tenure > 0 ? Math.max(0, tenure - paid) : '—';
+  const balanceEMI = tenure > 0 ? rem * (l.emi || 0) : 0;
+  const totalPaid = paid * (l.emi || 0);
+  const pct = tenure > 0 ? Math.round((paid/tenure)*100) : 0;
+  const isCompleted = tenure > 0 && paid >= tenure;
+  return { tenure, paid, rem, balanceEMI, totalPaid, pct, isCompleted };
+}
+
+function getNextEmiDate(l) {
+  if (!l.dueday) return null;
+  const history = l.emiHistory || [];
+  if (history.length > 0) {
+    // Last paid date se next due calculate karo
+    const lastPaid = new Date(history[history.length-1].date + 'T00:00:00');
+    const next = new Date(lastPaid.getFullYear(), lastPaid.getMonth()+1, l.dueday);
+    return next;
+  }
+  // Koi payment nahi — startDate ya today se calculate karo
+  const ref = l.startDate ? new Date(l.startDate+'T00:00:00') : new Date();
+  let d = new Date(ref.getFullYear(), ref.getMonth(), l.dueday);
+  if (d <= ref) d = new Date(ref.getFullYear(), ref.getMonth()+1, l.dueday);
+  return d;
+}
+
+function isEmiPaidThisMonth(l) {
+  const history = l.emiHistory || [];
+  if (!history.length) return false;
+  const last = history[history.length-1].date; // 'YYYY-MM-DD'
+  const now = new Date();
+  const lastDate = new Date(last+'T00:00:00');
+  return lastDate.getFullYear() === now.getFullYear() && lastDate.getMonth() === now.getMonth();
+}
+
+function getDaysUntil(date) {
+  if (!date) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.ceil((date - today) / (1000*60*60*24));
+  return diff;
+}
+
+function renderLoans() {
+  const c = document.getElementById('loans-container');
+  if (!DATA.loans.length) {
+    c.innerHTML = `<div class="empty"><div class="empty-icon">🏦</div><div class="empty-text">Koi loan add nahin kiya<br>+ Add Loan par click karein</div></div>`;
+    ['loan-pct','ls-approved','ls-emi','ls-count'].forEach(id => document.getElementById(id).textContent = id==='ls-count'?'0':'₹0');
+    document.getElementById('loan-global-bar').style.width = '0%';
+    document.getElementById('lbar-paid').textContent = '₹0';
+    document.getElementById('lbar-bal').textContent = '₹0';
+    return;
+  }
+
+  let totalApproved=0, totalBalance=0, totalPaid=0, totalEMI=0;
+  DATA.loans.forEach(l => {
+    const calc = calcLoan(l);
+    totalApproved += (l.approved||0);
+    totalBalance += calc.balanceEMI;
+    totalPaid += calc.totalPaid;
+    totalEMI += (l.emi||0);
+  });
+  const globalPct = (totalPaid+totalBalance) > 0 ? Math.round((totalPaid/(totalPaid+totalBalance))*100) : 0;
+  document.getElementById('loan-pct').textContent = globalPct+'%';
+  const gb = document.getElementById('loan-global-bar');
+  gb.style.width = globalPct+'%';
+  gb.className = 'progress-fill ' + (globalPct>66?'pf-good':globalPct>33?'pf-mid':'pf-low');
+  document.getElementById('lbar-paid').textContent = fmt(totalPaid);
+  document.getElementById('lbar-bal').textContent = fmt(totalBalance);
+  document.getElementById('ls-approved').textContent = fmt(totalApproved);
+  document.getElementById('ls-emi').textContent = fmt(totalEMI);
+  document.getElementById('ls-count').textContent = DATA.loans.length;
+
+  c.innerHTML = DATA.loans.map((l,i) => {
+    const calc = calcLoan(l);
+    const fillClass = calc.isCompleted?'pf-done':calc.pct>66?'pf-good':calc.pct>33?'pf-mid':'pf-low';
+    const nextEmi = getNextEmiDate(l);
+    const daysLeft = getDaysUntil(nextEmi);
+    const history = (l.emiHistory || []);
+    const paidThisMonth = isEmiPaidThisMonth(l);
+
+    let daysLabel = '', daysColor = 'var(--amber)';
+    if (paidThisMonth) {
+      daysLabel = '✅ Is mahine paid!'; daysColor = 'var(--green)';
+    } else if (daysLeft !== null) {
+      if (daysLeft === 0) { daysLabel='⚠️ Aaj Due!'; daysColor='var(--red)'; }
+      else if (daysLeft < 0) { daysLabel=`${Math.abs(daysLeft)} din overdue!`; daysColor='var(--red)'; }
+      else if (daysLeft <= 3) { daysLabel=`${daysLeft} din mein!`; daysColor='var(--red)'; }
+      else { daysLabel=`${daysLeft} din mein`; daysColor='var(--amber)'; }
+    }
+
+    return `
+    <div class="loan-card lc-${i%6} ${calc.isCompleted?'completed':''}">
+      ${calc.isCompleted ? '<div class="loan-completed-banner">🎉 Loan Mukammal! Congratulations!</div>' : ''}
+      <div class="loan-header">
+        <div>
+          <div class="loan-name">${l.company}</div>
+          <div class="loan-meta">${l.type}${l.rate?' • '+l.rate+'% p.a.':''}${l.accno?' • Acc: '+l.accno:''}</div>
+          <span class="loan-badge ${calc.isCompleted?'badge-done':daysLeft!==null&&daysLeft<=0?'badge-overdue':'badge-active'}">${calc.isCompleted?'✅ Completed':daysLeft!==null&&daysLeft<=0?'⚠️ Due':'🟢 Active'}</span>
+        </div>
+        <div class="loan-actions">
+          <div class="icon-btn" onclick="editLoan('${l.id}')" title="Edit">✏️</div>
+          <div class="icon-btn del" onclick="deleteLoan('${l.id}')" title="Delete">🗑️</div>
+        </div>
+      </div>
+
+      ${(()=>{
+        // Calculate loan end date
+        let endDateStr = '—';
+        if (l.startDate && l.tenure > 0) {
+          const sd = new Date(l.startDate + 'T00:00:00');
+          sd.setMonth(sd.getMonth() + l.tenure);
+          endDateStr = sd.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+        }
+        const startStr = l.startDate ? formatDate(l.startDate) : '—';
+        const emiDayStr = l.dueday ? `हर महीने ${l.dueday} तारीख` : 'Set नहीं';
+        return `<div class="loan-dates-row">
+          <div class="loan-date-item">
+            <div class="loan-date-label">📆 Shuru</div>
+            <div class="loan-date-val">${startStr}</div>
+          </div>
+          <div class="loan-date-item">
+            <div class="loan-date-label">📅 EMI Date</div>
+            <div class="loan-date-val" style="color:var(--amber)">${emiDayStr}</div>
+          </div>
+          <div class="loan-date-item">
+            <div class="loan-date-label">🏁 Khatam</div>
+            <div class="loan-date-val" style="color:${calc.isCompleted?'var(--green)':'var(--purple)'}">${calc.isCompleted?'✅ Closed':endDateStr}</div>
+          </div>
+        </div>`;
+      })()}
+
+      <div class="loan-grid">
+        <div class="loan-stat">
+          <div class="loan-stat-label">Approved</div>
+          <div class="loan-stat-val" style="color:var(--gold)">${fmt(l.approved||0)}</div>
+        </div>
+        <div class="loan-stat">
+          <div class="loan-stat-label">Monthly EMI</div>
+          <div class="loan-stat-val" style="color:var(--blue)">${fmt(l.emi||0)}</div>
+        </div>
+        <div class="loan-stat">
+          <div class="loan-stat-label">Balance</div>
+          <div class="loan-stat-val" style="color:var(--red)">${calc.tenure>0?fmt(calc.balanceEMI):'—'}</div>
+        </div>
+        <div class="loan-stat">
+          <div class="loan-stat-label">EMI Paid</div>
+          <div class="loan-stat-val" style="color:var(--green)">${calc.paid} <span style="font-size:10px;color:var(--text3)">/${calc.tenure||'?'}</span></div>
+        </div>
+        <div class="loan-stat">
+          <div class="loan-stat-label">EMI Bachi</div>
+          <div class="loan-stat-val" style="color:var(--amber)">${calc.isCompleted?'0':calc.rem}</div>
+        </div>
+        <div class="loan-stat">
+          <div class="loan-stat-label">Paid Amount</div>
+          <div class="loan-stat-val" style="color:var(--text2)">${fmt(calc.totalPaid)}</div>
+        </div>
+      </div>
+
+      ${calc.tenure>0?`
+      <div class="progress-wrap">
+        <div class="progress-label">
+          <span>Repayment: ${calc.pct}%</span>
+          <span>${calc.isCompleted?'Loan closed 🎉':calc.rem+' EMI bachi'}</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill ${fillClass}" style="width:${calc.pct}%"></div></div>
+      </div>`:''}
+
+      ${!calc.isCompleted && nextEmi ? `
+      <div class="emi-due-box">
+        <div class="emi-due-left">
+          <div>Next EMI Due</div>
+          <div class="emi-due-date">📅 ${nextEmi.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="emi-due-days" style="color:${daysColor}">${daysLabel}</div>
+          <button class="pay-emi-btn" onclick="payEMI('${l.id}')" ${calc.isCompleted||paidThisMonth?'disabled':''} style="${paidThisMonth?'background:var(--bg3);color:var(--green);border:1px solid var(--green)':''}">
+            ${paidThisMonth?'✅ Paid':'✅ Mark Paid'}
+          </button>
+        </div>
+      </div>` : !calc.isCompleted ? `
+      <div style="text-align:right;margin-bottom:10px">
+        <button class="pay-emi-btn" onclick="payEMI('${l.id}')" ${paidThisMonth?'disabled':''} style="${paidThisMonth?'background:var(--bg3);color:var(--green);border:1px solid var(--green)':''}">
+          ${paidThisMonth?'✅ Paid':'✅ EMI Mark Paid'}
+        </button>
+      </div>` : ''}
+
+      ${l.note?`<div class="loan-note">📝 ${l.note}</div>`:''}
+
+      ${history.length>0?`
+      <span class="emi-history-toggle" onclick="this.nextElementSibling.classList.toggle('open')">📋 EMI History (${history.length})</span>
+      <div class="emi-history">
+        ${history.slice().reverse().map((h,i)=>`<div class="emi-h-item">EMI #${history.length-i} – ${formatDate(h.date)} – ${fmt(h.amount)}</div>`).join('')}
+      </div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function openLoanModal(id) {
+  editLoanId = id || null;
+  if (id) {
+    const l = DATA.loans.find(x=>x.id===id);
+    document.getElementById('loanModalTitle').textContent = '✏️ Loan Edit';
+    document.getElementById('l-company').value = l.company||'';
+    document.getElementById('l-type').value = l.type||'Personal Loan';
+    document.getElementById('l-accno').value = l.accno||'';
+    document.getElementById('l-approved').value = l.approved||'';
+    document.getElementById('l-disbursed').value = l.disbursed||'';
+    document.getElementById('l-emi').value = l.emi||'';
+    document.getElementById('l-tenure').value = l.tenure||'';
+    document.getElementById('l-paid').value = l.paid||'';
+    document.getElementById('l-rate').value = l.rate||'';
+    document.getElementById('l-date').value = l.startDate||'';
+    document.getElementById('l-dueday').value = l.dueday||'';
+    document.getElementById('l-note').value = l.note||'';
+  } else {
+    document.getElementById('loanModalTitle').textContent = '🏦 Loan Add करें';
+    ['l-company','l-accno','l-approved','l-disbursed','l-emi','l-tenure','l-paid','l-rate','l-dueday','l-note'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('l-type').value = 'Personal Loan';
+    document.getElementById('l-date').value = todayStr();
+  }
+  document.getElementById('loanModal').classList.add('open');
+}
+function closeLoanModal() { document.getElementById('loanModal').classList.remove('open'); }
+
+function saveLoan() {
+  const company = document.getElementById('l-company').value.trim();
+  const emi = parseFloat(document.getElementById('l-emi').value);
+  const approved = parseFloat(document.getElementById('l-approved').value);
+  if (!company || !emi || !approved) { showToast('⚠️ Company, EMI aur Amount zaroori hai!'); return; }
+  const paid = parseInt(document.getElementById('l-paid').value)||0;
+  const tenure = parseInt(document.getElementById('l-tenure').value)||0;
+  if (tenure>0 && paid>tenure) { showToast('⚠️ Paid EMI count, Tenure se zyada nahi ho sakta!'); return; }
+
+  const loan = {
+    id: editLoanId || Date.now().toString(),
+    company, approved,
+    disbursed: parseFloat(document.getElementById('l-disbursed').value)||approved,
+    type: document.getElementById('l-type').value,
+    accno: document.getElementById('l-accno').value.trim(),
+    emi, tenure, paid,
+    rate: parseFloat(document.getElementById('l-rate').value)||0,
+    startDate: document.getElementById('l-date').value,
+    dueday: parseInt(document.getElementById('l-dueday').value)||0,
+    note: document.getElementById('l-note').value.trim(),
+  };
+
+  if (editLoanId) {
+    const idx = DATA.loans.findIndex(x=>x.id===editLoanId);
+    loan.emiHistory = DATA.loans[idx].emiHistory || [];
+    DATA.loans[idx] = loan;
+    showToast('✅ Loan update ho gaya!');
+  } else {
+    loan.emiHistory = [];
+    DATA.loans.push(loan);
+    showToast('✅ Loan add ho gaya!');
+  }
+  save(); closeLoanModal(); renderAll();
+}
+
+function editLoan(id) { openLoanModal(id); }
+function deleteLoan(id) {
+  if (!confirm('Kya aap is loan ko delete karna chahte hain?')) return;
+  DATA.loans = DATA.loans.filter(x=>x.id!==id);
+  save(); renderAll(); showToast('🗑️ Loan delete ho gaya');
+}
+
+function payEMI(id) {
+  const l = DATA.loans.find(x=>x.id===id);
+  if (!l) return;
+  const calc = calcLoan(l);
+  if (calc.isCompleted) { showToast('🎉 Loan already complete hai!'); return; }
+  l.paid = (l.paid||0) + 1;
+  if (!l.emiHistory) l.emiHistory = [];
+  l.emiHistory.push({ date: todayStr(), amount: l.emi, emiNo: l.paid });
+  // Also add to expense log
+  DATA.expenses.unshift({
+    id: Date.now().toString(), type:'out', cat:'emi',
+    amount: l.emi,
+    desc: `${l.company} EMI #${l.paid}`,
+    date: todayStr()
+  });
+  save(); renderAll();
+  const newCalc = calcLoan(l);
+  if (newCalc.isCompleted) showToast('🎉 Loan Mukammal! Bahut badiya!');
+  else showToast(`✅ EMI #${l.paid} paid! ${newCalc.rem} bachi`);
+}
+
+// ===== EXPENSES =====
+function getMonths() {
+  const months = new Set([curMonthStr()]);
+  DATA.expenses.forEach(e => { if (e.date) months.add(e.date.slice(0,7)); });
+  return Array.from(months).sort().reverse();
+}
+function renderMonthBar() {
+  const months = getMonths();
+  if (!selectedMonth || !months.includes(selectedMonth)) selectedMonth = months[0]||'';
+  const labels = {
+    '01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun',
+    '07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'
+  };
+  document.getElementById('monthBar').innerHTML = months.map(m => {
+    const [y,mo] = m.split('-');
+    return `<div class="month-chip ${m===selectedMonth?'active':''}" onclick="setMonth('${m}')">${labels[mo]} ${y.slice(2)}</div>`;
+  }).join('');
+}
+function setMonth(m) { selectedMonth = m; renderExpenses(); renderOverview(); }
+function renderOvMonthBar() {
+  const months = getMonths();
+  if (!selectedMonth || !months.includes(selectedMonth)) selectedMonth = months[0]||'';
+  const labels = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun','07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'};
+  const bar = document.getElementById('ovMonthBar');
+  if (!bar) return;
+  bar.innerHTML = months.map(m => {
+    const [y,mo] = m.split('-');
+    return `<div class="month-chip ${m===selectedMonth?'active':''}" onclick="setMonth('${m}')">${labels[mo]} ${y.slice(2)}</div>`;
+  }).join('');
+}
+function renderExpenses() {
+  renderMonthBar();
+  const monthData = DATA.expenses.filter(e=>e.date&&e.date.startsWith(selectedMonth));
+  let filtered = [...monthData];
+  // Apply search filter (only for list display)
+  if (expSearchQuery) {
+    const allCats2 = [...CATS_OUT,...CATS_IN];
+    filtered = filtered.filter(e => {
+      const cat = allCats2.find(x=>x.id===e.cat)||{label:'Other'};
+      return (e.desc||'').toLowerCase().includes(expSearchQuery) ||
+             cat.label.toLowerCase().includes(expSearchQuery) ||
+             String(e.amount).includes(expSearchQuery);
+    });
+  }
+  filtered.sort((a,b)=>b.date.localeCompare(a.date));
+
+  // Summary always from full month data (not search filtered)
+  let totalSpent=0, totalIncome=0;
+  monthData.forEach(e=>{ if(e.type==='out') totalSpent+=e.amount; else totalIncome+=e.amount; });
+  const emiPaidThisMonth = monthData.filter(e=>e.type==='out'&&e.cat==='emi').reduce((s,e)=>s+e.amount,0);
+  const netSavings = totalIncome - totalSpent;
+
+  document.getElementById('exp-spent').textContent = fmt(totalSpent);
+  document.getElementById('exp-income').textContent = fmt(totalIncome);
+
+  // Monthly Summary Card
+  const labelsM = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun','07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'};
+  const [sy, smo] = (selectedMonth||'').split('-');
+  document.getElementById('expSummaryMonth').textContent = smo ? `${labelsM[smo]} ${sy}` : '';
+  document.getElementById('exp-sum-income').textContent = fmtFull(totalIncome);
+  document.getElementById('exp-sum-spent').textContent = fmtFull(totalSpent);
+  document.getElementById('exp-sum-emi').textContent = fmtFull(emiPaidThisMonth);
+  const savEl = document.getElementById('exp-sum-savings');
+  savEl.textContent = (netSavings < 0 ? '-' : '') + fmtFull(Math.abs(netSavings));
+  savEl.style.color = netSavings >= 0 ? 'var(--green)' : 'var(--red)';
+
+  const allCats = [...CATS_OUT,...CATS_IN];
+  const c = document.getElementById('expenses-container');
+  if (!filtered.length) {
+    c.innerHTML=expSearchQuery
+      ? `<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">"${expSearchQuery}" se koi entry nahi mili</div></div>`
+      : `<div class="empty"><div class="empty-icon">💸</div><div class="empty-text">Is mahine koi entry nahi<br>+ Add par click karein</div></div>`;
+    return;
+  }
+  c.innerHTML = filtered.map(e=>{
+    const cat = allCats.find(x=>x.id===e.cat)||{icon:'💰',label:'Other'};
+    const bg = e.type==='out'?'rgba(239,68,68,0.12)':'rgba(34,197,94,0.12)';
+    return `
+    <div class="expense-card">
+      <div class="exp-icon" style="background:${bg}">${cat.icon}</div>
+      <div class="exp-info">
+        <div class="exp-name">${e.desc||cat.label}</div>
+        <div class="exp-meta">${cat.label} • ${formatDate(e.date)}</div>
+      </div>
+      <div>
+        <div class="exp-amount ${e.type==='out'?'out':'inp'}">${e.type==='out'?'-':'+'}${fmt(e.amount)}</div>
+        <div class="exp-del" onclick="deleteExp('${e.id}')">🗑️</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openExpModal() {
+  currentExpType='out'; selectedCat='';
+  document.getElementById('e-amount').value='';
+  document.getElementById('e-desc').value='';
+  document.getElementById('e-date').value=todayStr();
+  setExpType('out');
+  document.getElementById('expModal').classList.add('open');
+}
+function closeExpModal() { document.getElementById('expModal').classList.remove('open'); }
+function setExpType(t) {
+  currentExpType=t; selectedCat='';
+  document.getElementById('type-out').className='type-btn'+(t==='out'?' active-out':'');
+  document.getElementById('type-in').className='type-btn'+(t==='in'?' active-in':'');
+  renderCatGrid();
+}
+function renderCatGrid() {
+  const cats = currentExpType==='out'?CATS_OUT:CATS_IN;
+  document.getElementById('catGrid').innerHTML = cats.map(c=>`
+    <div class="cat-item ${selectedCat===c.id?'selected':''}" onclick="selectCat('${c.id}')">
+      <div class="cat-item-icon">${c.icon}</div>
+      <div class="cat-item-label">${c.label}</div>
+    </div>`).join('');
+}
+function selectCat(id) { selectedCat=id; renderCatGrid(); }
+function saveExpense() {
+  const amt = parseFloat(document.getElementById('e-amount').value);
+  if (!amt||amt<=0) { showToast('⚠️ Amount daalna zaroori hai!'); return; }
+  DATA.expenses.push({
+    id: Date.now().toString(), type: currentExpType,
+    cat: selectedCat||'other', amount: amt,
+    desc: document.getElementById('e-desc').value.trim(),
+    date: document.getElementById('e-date').value||todayStr(),
+  });
+  save(); closeExpModal(); renderExpenses(); renderOverview();
+  showToast('✅ Entry add ho gayi!');
+}
+function deleteExp(id) {
+  DATA.expenses = DATA.expenses.filter(x=>x.id!==id);
+  save(); renderExpenses(); renderOverview();
+  showToast('🗑️ Entry delete ho gayi');
+}
+
+// ===== EMI CALENDAR =====
+function renderEmiCalendar() {
+  const card = document.getElementById('emiCalendarCard');
+  if (!card) return;
+  const activeLoans = DATA.loans.filter(l => {
+    const calc = calcLoan(l);
+    return !calc.isCompleted && l.dueday;
+  });
+  if (!activeLoans.length) {
+    card.innerHTML = `<div class="empty" style="padding:20px"><div class="empty-icon" style="font-size:30px">📅</div><div class="empty-text">Koi active loan nahi hai</div></div>`;
+    return;
+  }
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  // Sort by next due date
+  const sorted = activeLoans.map(l => {
+    const nextEmi = getNextEmiDate(l);
+    const daysLeft = getDaysUntil(nextEmi);
+    return { l, nextEmi, daysLeft };
+  }).sort((a,b) => a.daysLeft - b.daysLeft);
+
+  card.innerHTML = sorted.map(({ l, nextEmi, daysLeft }) => {
+    const calc = calcLoan(l);
+    let badgeClass, badgeText;
+    if (daysLeft === 0) { badgeClass='badge-today'; badgeText='⚠️ Aaj Due!'; }
+    else if (daysLeft < 0) { badgeClass='badge-urgent'; badgeText=`${Math.abs(daysLeft)} din overdue!`; }
+    else if (daysLeft <= 5) { badgeClass='badge-urgent'; badgeText=`${daysLeft} din mein`; }
+    else if (daysLeft <= 10) { badgeClass='badge-soon'; badgeText=`${daysLeft} din mein`; }
+    else { badgeClass='badge-ok'; badgeText=`${daysLeft} din mein`; }
+
+    const dayNum = nextEmi.getDate();
+    const monthStr = MONTHS[nextEmi.getMonth()];
+
+    // End date
+    let endStr = '—';
+    if (l.startDate && l.tenure > 0) {
+      const sd = new Date(l.startDate + 'T00:00:00');
+      sd.setMonth(sd.getMonth() + l.tenure);
+      endStr = sd.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+    }
+
+    return `<div class="emi-cal-item">
+      <div class="emi-cal-date-box">
+        <div class="emi-cal-day">${dayNum}</div>
+        <div class="emi-cal-month">${monthStr}</div>
+      </div>
+      <div class="emi-cal-info">
+        <div class="emi-cal-name">${l.company}</div>
+        <div class="emi-cal-sub">${l.type} • ${calc.rem !== '—' ? calc.rem+' EMI bachi' : 'Tenure set nahi'}</div>
+        <div class="emi-cal-sub" style="color:var(--purple);margin-top:1px">🏁 ${endStr}</div>
+      </div>
+      <div class="emi-cal-right">
+        <div class="emi-cal-amount">${fmt(l.emi||0)}</div>
+        <div class="emi-cal-days-badge ${badgeClass}">${badgeText}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== OVERVIEW =====
+function renderOverview() {
+  let totalApproved=0, totalBalance=0, totalEMI=0;
+  DATA.loans.forEach(l=>{
+    const calc=calcLoan(l);
+    totalApproved+=(l.approved||0);
+    totalBalance+=calc.balanceEMI;
+    totalEMI+=(l.emi||0);
+  });
+  document.getElementById('ov-totalApproved').textContent=fmt(totalApproved);
+  document.getElementById('ov-totalBalance').textContent=fmt(totalBalance);
+  document.getElementById('ov-totalEMI').textContent=fmt(totalEMI);
+  document.getElementById('ov-loanCount').textContent=DATA.loans.length;
+  renderEmiCalendar();
+
+  // Use selectedMonth (shared with Kharcha page)
+  if (!selectedMonth) selectedMonth = curMonthStr();
+  renderOvMonthBar();
+  // Update section title with selected month
+  const labOv = {'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun','07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'};
+  const [ovy, ovmo] = selectedMonth.split('-');
+  const ovTitle = document.getElementById('ov-month-title');
+  if (ovTitle) ovTitle.textContent = '💸 ' + (labOv[ovmo]||'') + ' ' + ovy;
+
+  let spent=0, income=0;
+  const cmExpenses = DATA.expenses.filter(e=>e.date&&e.date.startsWith(selectedMonth));
+  cmExpenses.forEach(e=>{
+    if(e.type==='out') spent+=e.amount; else income+=e.amount;
+  });
+  const emiPaidCm = cmExpenses.filter(e=>e.type==='out'&&e.cat==='emi').reduce((s,e)=>s+e.amount,0);
+  document.getElementById('ov-spent').textContent=fmt(spent);
+  document.getElementById('ov-income').textContent=fmt(income);
+  document.getElementById('ov2-income').textContent=fmtFull(income);
+  document.getElementById('ov2-spent').textContent=fmtFull(spent);
+  document.getElementById('ov2-emi').textContent=fmtFull(emiPaidCm);
+  const net=income-spent;
+  const netEl=document.getElementById('ov2-net');
+  netEl.textContent=(net<0?'-':'')+fmtFull(net);
+  netEl.style.color=net>=0?'var(--green)':'var(--red)';
+
+  // Savings card + category chart
+  renderSavingsCard(income, spent, 0);
+  renderCatChart();
+
+  // RD overview
+  if (!DATA.rd) DATA.rd = [];
+  let rdInvested = 0, rdMaturity = 0, rdMonthly = 0;
+  DATA.rd.forEach(rd => {
+    rdInvested += (rd.paidCount || 0) * (rd.installment || 0);
+    rdMaturity += calcRdMaturity(rd.installment || 0, rd.tenure || 0, rd.rate || 0);
+    rdMonthly += (rd.installment || 0);
+  });
+  const rdPrincipalTotal = DATA.rd.reduce((s,rd) => s + (rd.installment||0)*(rd.tenure||0), 0);
+  document.getElementById('ov-rd-invested').textContent = fmtFull(rdInvested);
+  document.getElementById('ov-rd-maturity').textContent = fmtFull(rdMaturity);
+  document.getElementById('ov-rd-monthly').textContent = fmtFull(rdMonthly);
+  document.getElementById('ov-rd-profit').textContent = fmtFull(Math.max(0, rdMaturity - rdPrincipalTotal));
+
+  // All-time savings (sabhi mahine ka total)
+  let atIncome = 0, atSpent = 0;
+  DATA.expenses.forEach(e => {
+    if (e.type === 'out') atSpent += e.amount;
+    else atIncome += e.amount;
+  });
+  const atNet = atIncome - atSpent;
+  const atEl = document.getElementById('allTimeSavingsAmount');
+  atEl.textContent = (atNet < 0 ? '-' : '') + fmtFull(Math.abs(atNet));
+  atEl.style.color = atNet >= 0 ? 'var(--gold)' : 'var(--red)';
+  document.getElementById('allTimeSavingsHint').textContent = atNet >= 0 ? '🎉 Sabhi mahine mila ke bacha!' : '⚠️ Total kharcha income se zyada!';
+  document.getElementById('at-income').textContent = fmtFull(atIncome);
+  document.getElementById('at-spent').textContent = fmtFull(atSpent);
+
+  // Budget bar
+  if (BUDGET>0) {
+    document.getElementById('budgetCard').style.display='block';
+    const pct=Math.min(100,Math.round((spent/BUDGET)*100));
+    document.getElementById('budgetPctText').textContent=pct+'%';
+    document.getElementById('budgetPctText').style.color=pct>90?'var(--red)':pct>70?'var(--amber)':'var(--green)';
+    const bf=document.getElementById('budgetFill');
+    bf.style.width=pct+'%';
+    bf.style.background=pct>90?'var(--red)':pct>70?'var(--amber)':'var(--green)';
+    document.getElementById('budgetSpent').textContent=fmtFull(spent);
+    document.getElementById('budgetLimit').textContent=fmtFull(BUDGET);
+    const left=BUDGET-spent;
+    const leftEl=document.getElementById('budgetLeft');
+    leftEl.textContent=(left<0?'-':'')+fmtFull(left);
+    leftEl.style.color=left<0?'var(--red)':'var(--green)';
+  } else {
+    document.getElementById('budgetCard').style.display='none';
+  }
+}
+
+// ===== SETTINGS =====
+function renderSettings() {
+  document.getElementById('budgetSettingSub').textContent = BUDGET>0 ? `Current: ${fmtFull(BUDGET)} / month` : 'Set नहीं है';
+}
+
+function openPinChangeModal() {
+  ['pc-old','pc-new','pc-conf'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('pinChangeModal').classList.add('open');
+}
+function closePinChangeModal() { document.getElementById('pinChangeModal').classList.remove('open'); }
+function savePinChange() {
+  const oldP=document.getElementById('pc-old').value;
+  const newP=document.getElementById('pc-new').value;
+  const confP=document.getElementById('pc-conf').value;
+  if(oldP!==PIN){showToast('❌ Purana PIN galat hai!');return;}
+  if(newP.length!==4||isNaN(newP)){showToast('⚠️ Naya PIN 4 digits ka hona chahiye!');return;}
+  if(newP!==confP){showToast('❌ New PIN match nahi hua!');return;}
+  PIN=newP; savePin(PIN);
+  closePinChangeModal(); showToast('✅ PIN badal gaya!');
+}
+
+function openBudgetModal() {
+  document.getElementById('bgt-amount').value=BUDGET||'';
+  document.getElementById('budgetModal').classList.add('open');
+}
+function closeBudgetModal() { document.getElementById('budgetModal').classList.remove('open'); }
+function saveBudget() {
+  const b=parseFloat(document.getElementById('bgt-amount').value)||0;
+  BUDGET=b; saveBudgetLS(b);
+  closeBudgetModal(); renderOverview(); renderSettings();
+  showToast(b>0?`✅ Budget set: ${fmtFull(b)}`:'Budget remove ho gaya');
+}
+
+function exportData() {
+  const exportObj={
+    version:2, exportDate:todayStr(),
+    loans:DATA.loans, expenses:DATA.expenses,
+    budget:BUDGET
+  };
+  const blob=new Blob([JSON.stringify(exportObj,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`kharcha-backup-${todayStr()}.json`;
+  a.click();
+  showToast('✅ Data export ho gaya!');
+}
+function importData(e) {
+  const file=e.target.files[0];
+  if(!file){return;}
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const parsed=JSON.parse(ev.target.result);
+      if(!parsed.loans||!parsed.expenses){showToast('❌ Invalid backup file!');return;}
+      if(!confirm(`Import karein? ${parsed.loans.length} loans, ${parsed.expenses.length} expenses.\n\nCurrent data replace ho jayega!`)){return;}
+      DATA.loans=parsed.loans;
+      DATA.expenses=parsed.expenses;
+      if(parsed.budget){BUDGET=parsed.budget;saveBudgetLS(BUDGET);}
+      save();renderAll();
+      showToast('✅ Data import ho gaya!');
+    }catch(err){showToast('❌ File parse nahi hui!');}
+    e.target.value='';
+  };
+  reader.readAsText(file);
+}
+function clearAllData() {
+  if(!confirm('Sab kuch delete ho jayega — Loans, Expenses, Udhar sab!\n\nKya aap sure hain?'))return;
+  DATA={loans:[],expenses:[],udhar:{diya:[],liya:[]},rd:[]};
+  save();renderAll();
+  showToast('🗑️ Sab delete ho gaya');
+}
+
+// ===== UDHAR =====
+let currentUdharTab = 'diya';
+
+function switchUdharTab(t) {
+  currentUdharTab = t;
+  document.getElementById('utab-diya').className = 'udhar-tab' + (t==='diya'?' active-diya':'');
+  document.getElementById('utab-liya').className = 'udhar-tab' + (t==='liya'?' active-liya':'');
+  document.getElementById('udhar-diya-section').style.display = t==='diya'?'block':'none';
+  document.getElementById('udhar-liya-section').style.display = t==='liya'?'block':'none';
+}
+
+function renderUdhar() {
+  const diya = DATA.udhar.diya || [];
+  const liya = DATA.udhar.liya || [];
+  const fmtAmt = n => '₹' + Math.round(Math.abs(n||0)).toLocaleString('en-IN');
+
+  // Diya stats
+  const diyaTotal = diya.reduce((s,d)=>s+(d.total||0),0);
+  const diyaWapas = diya.reduce((s,d)=>s+(d.wapas||0),0);
+  document.getElementById('udhar-diya-total').textContent = fmtAmt(diyaTotal);
+  document.getElementById('udhar-diya-baaki').textContent = fmtAmt(diyaTotal-diyaWapas);
+
+  // Liya stats
+  const liyaTotal = liya.reduce((s,d)=>s+(d.total||0),0);
+  const liyaWapas = liya.reduce((s,d)=>s+(d.wapas||0),0);
+  document.getElementById('udhar-liya-total').textContent = fmtAmt(liyaTotal);
+  document.getElementById('udhar-liya-baaki').textContent = fmtAmt(liyaTotal-liyaWapas);
+
+  // Render diya list
+  const dc = document.getElementById('udhar-diya-container');
+  if (!diya.length) {
+    dc.innerHTML = `<div class="empty"><div class="empty-icon">💸</div><div class="empty-text">Kisiko udhar nahi diya<br>+ Add par click karein</div></div>`;
+  } else {
+    dc.innerHTML = diya.map(d => renderUdharCard(d,'diya')).join('');
+  }
+
+  // Render liya list
+  const lc = document.getElementById('udhar-liya-container');
+  if (!liya.length) {
+    lc.innerHTML = `<div class="empty"><div class="empty-icon">🤝</div><div class="empty-text">Kisise udhar nahi liya<br>+ Add par click karein</div></div>`;
+  } else {
+    lc.innerHTML = liya.map(d => renderUdharCard(d,'liya')).join('');
+  }
+
+  switchUdharTab(currentUdharTab);
+}
+
+function renderUdharCard(d, mode) {
+  const baaki = (d.total||0) - (d.wapas||0);
+  const pct = d.total > 0 ? Math.min(100, Math.round(((d.wapas||0)/d.total)*100)) : 0;
+  const cleared = baaki <= 0;
+  const color = mode==='diya' ? 'var(--green)' : 'var(--purple)';
+  const fmtA = n => '₹' + Math.round(Math.abs(n||0)).toLocaleString('en-IN');
+  const fillClass = cleared ? 'pf-done' : pct>66 ? 'pf-good' : pct>33 ? 'pf-mid' : 'pf-low';
+
+  // Due date check
+  let dueLine = '';
+  if (d.expected && !cleared) {
+    const expD = new Date(d.expected+'T00:00:00');
+    const today = new Date(); today.setHours(0,0,0,0);
+    const diff = Math.ceil((expD-today)/(1000*60*60*24));
+    if (diff < 0) dueLine = `<span style="color:var(--red);font-size:10px;font-weight:700">⚠️ ${Math.abs(diff)} din overdue!</span>`;
+    else if (diff===0) dueLine = `<span style="color:var(--red);font-size:10px;font-weight:700">⚠️ Aaj due hai!</span>`;
+    else if (diff<=7) dueLine = `<span style="color:var(--amber);font-size:10px;font-weight:700">📅 ${diff} din mein due</span>`;
+  }
+
+  const payHistHtml = (d.payHistory||[]).length > 0 ? `
+    <span class="emi-history-toggle" onclick="this.nextElementSibling.classList.toggle('open')">📋 Payment History (${d.payHistory.length})</span>
+    <div class="emi-history">
+      ${(d.payHistory||[]).slice().reverse().map((h,i)=>`<div class="emi-h-item">#${(d.payHistory.length-i)} – ${h.date} – ₹${Math.round(h.amount).toLocaleString('en-IN')}</div>`).join('')}
+    </div>` : '';
+
+  return `
+  <div class="udhar-card ${mode} ${cleared?'cleared':''}">
+    ${cleared ? '<div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:6px 12px;text-align:center;font-size:12px;font-weight:700;color:var(--green);margin-bottom:10px">🎉 Poora Wapas Ho Gaya!</div>' : ''}
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+      <div>
+        <div class="udhar-name">${d.name}</div>
+        <div class="udhar-meta">📅 ${d.date||''}${d.note?' • '+d.note:''}</div>
+        ${dueLine ? '<div style="margin-top:3px">'+dueLine+'</div>' : ''}
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:var(--font-head);font-size:18px;font-weight:800;color:${cleared?'var(--green)':color}">${fmtA(baaki)}</div>
+        <div style="font-size:10px;color:var(--text3)">${cleared?'✅ Cleared':'baaki'}</div>
+      </div>
+    </div>
+    <div class="udhar-grid">
+      <div class="udhar-stat"><div class="udhar-stat-label">Total</div><div class="udhar-stat-val" style="color:var(--gold)">${fmtA(d.total)}</div></div>
+      <div class="udhar-stat"><div class="udhar-stat-label">Wapas</div><div class="udhar-stat-val" style="color:var(--green)">${fmtA(d.wapas)}</div></div>
+      <div class="udhar-stat"><div class="udhar-stat-label">Baaki</div><div class="udhar-stat-val" style="color:${cleared?'var(--green)':color}">${fmtA(baaki)}</div></div>
+    </div>
+    ${d.expected?`<div style="font-size:10px;color:var(--text3);margin-bottom:8px">🏁 Expected: ${d.expected}</div>`:''}
+    <div class="progress-wrap">
+      <div class="progress-label"><span>Wapas: ${pct}%</span><span>${cleared?'Complete ✅':pct+'% done'}</span></div>
+      <div class="progress-bar"><div class="progress-fill ${fillClass}" style="width:${pct}%"></div></div>
+    </div>
+    ${payHistHtml}
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+      ${!cleared ? `<button class="udhar-pay-btn ${mode==='liya'?'liya-btn':''}" onclick="openUdharPayModal('${d.id}','${mode}')">💰 Payment Record</button>` : ''}
+      <button class="udhar-del-btn" onclick="deleteUdhar('${d.id}','${mode}')">🗑️</button>
+    </div>
+  </div>`;
+}
+
+function openUdharModal(mode) {
+  document.getElementById('u-mode').value = mode;
+  document.getElementById('u-edit-id').value = '';
+  document.getElementById('udharModalTitle').textContent = mode==='diya' ? '💸 Diya Hua Udhar Add' : '🤝 Liya Hua Udhar Add';
+  document.getElementById('udharSubmitBtn').style.background = mode==='liya' ? 'var(--purple)' : 'var(--gold)';
+  ['u-name','u-total','u-wapas','u-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('u-date').value = todayStr();
+  document.getElementById('u-expected').value = '';
+  document.getElementById('udharModal').classList.add('open');
+}
+function closeUdharModal() { document.getElementById('udharModal').classList.remove('open'); }
+
+function saveUdhar() {
+  const name = document.getElementById('u-name').value.trim();
+  const total = parseFloat(document.getElementById('u-total').value)||0;
+  if (!name || !total) { showToast('⚠️ Naam aur Amount zaroori hai!'); return; }
+  const mode = document.getElementById('u-mode').value;
+  const editId = document.getElementById('u-edit-id').value;
+  const entry = {
+    id: editId || Date.now().toString(),
+    name, total,
+    wapas: parseFloat(document.getElementById('u-wapas').value)||0,
+    date: document.getElementById('u-date').value || todayStr(),
+    expected: document.getElementById('u-expected').value,
+    note: document.getElementById('u-note').value.trim(),
+    payHistory: editId ? (DATA.udhar[mode].find(x=>x.id===editId)||{}).payHistory||[] : []
+  };
+  if (editId) {
+    const idx = DATA.udhar[mode].findIndex(x=>x.id===editId);
+    if (idx>=0) DATA.udhar[mode][idx] = entry;
+  } else {
+    DATA.udhar[mode].unshift(entry);
+  }
+  save(); closeUdharModal(); renderUdhar();
+  showToast('✅ Udhar record save ho gaya!');
+}
+
+function deleteUdhar(id, mode) {
+  if (!confirm('Yeh record delete karein?')) return;
+  DATA.udhar[mode] = DATA.udhar[mode].filter(x=>x.id!==id);
+  save(); renderUdhar(); showToast('🗑️ Record delete ho gaya');
+}
+
+function openUdharPayModal(id, mode) {
+  const d = DATA.udhar[mode].find(x=>x.id===id);
+  if (!d) return;
+  const baaki = (d.total||0)-(d.wapas||0);
+  document.getElementById('up-id').value = id;
+  document.getElementById('up-mode').value = mode;
+  document.getElementById('udharPayTitle').textContent = mode==='diya'?'💸 Wapas Aaya Record':'🤝 Diya Wapas Record';
+  document.getElementById('udharPaySubmitBtn').style.background = mode==='liya'?'var(--purple)':'var(--gold)';
+  document.getElementById('up-amount').value = '';
+  document.getElementById('up-date').value = todayStr();
+  document.getElementById('udharPayInfo').innerHTML = `
+    <div style="font-weight:700;font-size:15px;margin-bottom:6px">${d.name}</div>
+    <div style="display:flex;justify-content:space-between;font-size:13px">
+      <span style="color:var(--text2)">Total:</span><span style="color:var(--gold);font-weight:700">₹${Math.round(d.total).toLocaleString('en-IN')}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:4px">
+      <span style="color:var(--text2)">Wapas Ho Gaya:</span><span style="color:var(--green);font-weight:700">₹${Math.round(d.wapas||0).toLocaleString('en-IN')}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:4px">
+      <span style="color:var(--text2)">Baaki:</span><span style="color:${mode==='diya'?'var(--green)':'var(--purple)'};font-weight:800;font-size:15px">₹${Math.round(baaki).toLocaleString('en-IN')}</span>
+    </div>`;
+  document.getElementById('payQuickBtns').innerHTML = [25,50,75,100].map(p=>`
+    <div class="pay-quick" onclick="document.getElementById('up-amount').value=Math.round(${baaki}*${p}/100)">${p}%</div>`).join('') +
+    `<div class="pay-quick" onclick="document.getElementById('up-amount').value=${baaki}">Full</div>`;
+  document.getElementById('udharPayModal').classList.add('open');
+}
+function closeUdharPayModal() { document.getElementById('udharPayModal').classList.remove('open'); }
+
+function saveUdharPayment() {
+  const id = document.getElementById('up-id').value;
+  const mode = document.getElementById('up-mode').value;
+  const amount = parseFloat(document.getElementById('up-amount').value)||0;
+  if (!amount || amount<=0) { showToast('⚠️ Amount daalna zaroori hai!'); return; }
+  const d = DATA.udhar[mode].find(x=>x.id===id);
+  if (!d) return;
+  const baaki = (d.total||0)-(d.wapas||0);
+  d.wapas = Math.min((d.wapas||0)+amount, d.total);
+  if (!d.payHistory) d.payHistory=[];
+  d.payHistory.push({ date: document.getElementById('up-date').value||todayStr(), amount });
+  save(); closeUdharPayModal(); renderUdhar();
+  if (d.wapas >= d.total) showToast('🎉 Poora wapas ho gaya!');
+  else showToast(`✅ ₹${Math.round(amount).toLocaleString('en-IN')} record ho gaya`);
+}
+
+// ===== RD (RECURRING DEPOSIT) =====
+let editRdId = null;
+
+function calcRdMaturity(installment, months, rateAnnual) {
+  // RD Maturity formula: M = R * [(1+i)^n - 1] / (1 - (1+i)^(-1/3))
+  // Simple quarterly compounding formula used by most Indian banks
+  const r = rateAnnual / 400; // quarterly rate
+  const n = months / 3; // number of quarters
+  let maturity = 0;
+  // Monthly compounding approach: each installment compounds
+  const monthlyRate = rateAnnual / 1200;
+  for (let m = 1; m <= months; m++) {
+    const remainingMonths = months - m + 1;
+    maturity += installment * Math.pow(1 + monthlyRate, remainingMonths);
+  }
+  return Math.round(maturity);
+}
+
+function calcRdPreview() {
+  const installment = parseFloat(document.getElementById('rd-installment').value) || 0;
+  const tenure = parseInt(document.getElementById('rd-tenure').value) || 0;
+  const rate = parseFloat(document.getElementById('rd-rate').value) || 0;
+  const box = document.getElementById('rdPreviewBox');
+  if (!installment || !tenure || !rate) { box.style.display='none'; return; }
+  const invested = installment * tenure;
+  const maturity = calcRdMaturity(installment, tenure, rate);
+  const interest = maturity - invested;
+  document.getElementById('prev-invested').textContent = fmtFull(invested);
+  document.getElementById('prev-interest').textContent = fmtFull(interest);
+  document.getElementById('prev-maturity').textContent = fmtFull(maturity);
+  // Maturity date
+  const startVal = document.getElementById('rd-startdate').value;
+  if (startVal) {
+    const sd = new Date(startVal + 'T00:00:00');
+    sd.setMonth(sd.getMonth() + tenure);
+    document.getElementById('prev-matdate').textContent = '🏁 Maturity: ' + sd.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  } else {
+    document.getElementById('prev-matdate').textContent = '';
+  }
+  box.style.display = 'block';
+}
+
+function renderRd() {
+  if (!DATA.rd) DATA.rd = [];
+  const c = document.getElementById('rd-container');
+  const rds = DATA.rd;
+
+  let totalInvested = 0, totalMaturity = 0, totalMonthly = 0;
+  rds.forEach(rd => {
+    const paidAmt = (rd.paidCount || 0) * (rd.installment || 0);
+    totalInvested += paidAmt;
+    totalMaturity += calcRdMaturity(rd.installment || 0, rd.tenure || 0, rd.rate || 0);
+    totalMonthly += (rd.installment || 0);
+  });
+  const totalProfit = totalMaturity - (rds.reduce((s,rd) => s + (rd.installment||0)*(rd.tenure||0), 0));
+
+  document.getElementById('rd-total-invested').textContent = fmtFull(totalInvested);
+  document.getElementById('rd-total-maturity').textContent = fmtFull(totalMaturity);
+  document.getElementById('rd-total-profit').textContent = fmtFull(Math.max(0, totalProfit));
+  document.getElementById('rd-monthly-total').textContent = fmtFull(totalMonthly);
+
+  if (!rds.length) {
+    c.innerHTML = `<div class="empty"><div class="empty-icon">🏧</div><div class="empty-text">Koi RD add nahin kiya<br>+ Add RD par click karein</div></div>`;
+    return;
+  }
+
+  c.innerHTML = rds.map((rd, i) => {
+    const paidCount = rd.paidCount || 0;
+    const tenure = rd.tenure || 0;
+    const installment = rd.installment || 0;
+    const rate = rd.rate || 0;
+    const paidAmt = paidCount * installment;
+    const totalPrincipal = tenure * installment;
+    const maturityVal = calcRdMaturity(installment, tenure, rate);
+    const interestEarned = maturityVal - totalPrincipal;
+    const rem = tenure - paidCount;
+    const pct = tenure > 0 ? Math.round((paidCount / tenure) * 100) : 0;
+    const isMatured = paidCount >= tenure && tenure > 0;
+    const history = rd.installmentHistory || [];
+    const fillClass = isMatured ? 'pf-done' : pct > 66 ? 'pf-good' : pct > 33 ? 'pf-mid' : 'pf-low';
+
+    // Next due date
+    let nextDueHtml = '';
+    if (!isMatured && rd.dueday) {
+      const today = new Date();
+      let d = new Date(today.getFullYear(), today.getMonth(), rd.dueday);
+      if (d < today) d = new Date(today.getFullYear(), today.getMonth()+1, rd.dueday);
+      const daysLeft = Math.ceil((d - new Date().setHours(0,0,0,0)) / 86400000);
+      const daysLabel = daysLeft === 0 ? '⚠️ Aaj Due!' : daysLeft < 0 ? `${Math.abs(daysLeft)} din overdue!` : daysLeft <= 3 ? `${daysLeft} din mein!` : `${daysLeft} din mein`;
+      const daysColor = daysLeft <= 3 ? 'var(--red)' : 'var(--cyan)';
+      nextDueHtml = `<div class="rd-installment-box">
+        <div>
+          <div style="font-size:11px;color:var(--text2)">Next Installment Due</div>
+          <div style="font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--cyan);margin-top:2px">📅 ${d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:11px;font-weight:700;color:${daysColor}">${daysLabel}</div>
+          <button class="pay-rd-btn" onclick="openRdPayModal('${rd.id}')">✅ Pay Now</button>
+        </div>
+      </div>`;
+    } else if (!isMatured) {
+      nextDueHtml = `<div style="text-align:right;margin-bottom:10px">
+        <button class="pay-rd-btn" onclick="openRdPayModal('${rd.id}')">✅ Installment Pay</button>
+      </div>`;
+    }
+
+    // Maturity date string
+    let matDateStr = '—';
+    if (rd.startDate && tenure > 0) {
+      const sd = new Date(rd.startDate + 'T00:00:00');
+      sd.setMonth(sd.getMonth() + tenure);
+      matDateStr = sd.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+    }
+
+    return `<div class="rd-card ${isMatured ? 'rd-matured' : ''}">
+      ${isMatured ? '<div class="rd-maturity-banner">🎉 RD Mature Ho Gayi! Congratulations!</div>' : ''}
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+        <div>
+          <div class="rd-name">${rd.bank}</div>
+          <div class="rd-meta">${rd.type}${rd.rate?' • '+rd.rate+'% p.a.':''}${rd.accno?' • Acc: '+rd.accno:''}</div>
+          <span class="loan-badge ${isMatured?'badge-done':'badge-active'}" style="${isMatured?'':'border-color:rgba(34,211,238,0.3);color:var(--cyan);background:rgba(34,211,238,0.1)'}">${isMatured?'✅ Matured':'🔵 Active'}</span>
+          ${rd.flexi ? `<span class="loan-badge" style="border-color:rgba(96,165,250,0.3);color:var(--blue);background:rgba(96,165,250,0.1);margin-left:6px">🎯 Flexi</span>` : ''}
+        </div>
+        <div class="loan-actions">
+          <div class="icon-btn" onclick="editRd('${rd.id}')" title="Edit">✏️</div>
+          <div class="icon-btn del" onclick="deleteRd('${rd.id}')" title="Delete">🗑️</div>
+        </div>
+      </div>
+
+      <!-- Dates row -->
+      <div class="loan-dates-row">
+        <div class="loan-date-item">
+          <div class="loan-date-label">📆 Shuru</div>
+          <div class="loan-date-val">${rd.startDate ? formatDate(rd.startDate) : '—'}</div>
+        </div>
+        <div class="loan-date-item">
+          <div class="loan-date-label">📅 Due Day</div>
+          <div class="loan-date-val" style="color:var(--cyan)">${rd.dueday ? `हर महीने ${rd.dueday}` : 'Set नहीं'}</div>
+        </div>
+        <div class="loan-date-item">
+          <div class="loan-date-label">🏁 Maturity</div>
+          <div class="loan-date-val" style="color:${isMatured?'var(--green)':'var(--purple)'}">${isMatured?'✅ Done':matDateStr}</div>
+        </div>
+      </div>
+
+      <!-- Stats grid -->
+      <div class="rd-grid">
+        <div>
+          <div class="rd-stat-label">Monthly</div>
+          <div class="rd-stat-val" style="color:var(--cyan)">${rd.flexi ? `₹${fmtFull(rd.minAmount)} - ${fmtFull(rd.maxAmount)}` : fmtFull(installment)}</div>
+          ${rd.flexi ? `<div style="font-size:9px;color:var(--text3);margin-top:2px">Avg: ${fmtFull(installment)}</div>` : ''}
+        </div>
+        <div>
+          <div class="rd-stat-label">Invested</div>
+          <div class="rd-stat-val" style="color:var(--gold)">${fmtFull(paidAmt)}</div>
+        </div>
+        <div>
+          <div class="rd-stat-label">Baaki</div>
+          <div class="rd-stat-val" style="color:${isMatured?'var(--green)':'var(--amber)'}">${isMatured?'✅':fmtFull(rem*installment)}</div>
+        </div>
+        <div>
+          <div class="rd-stat-label">Installments</div>
+          <div class="rd-stat-val" style="color:var(--green)">${paidCount} <span style="font-size:10px;color:var(--text3)">/${tenure}</span></div>
+        </div>
+        <div>
+          <div class="rd-stat-label">Interest</div>
+          <div class="rd-stat-val" style="color:var(--green)">${fmtFull(interestEarned)}</div>
+        </div>
+        <div>
+          <div class="rd-stat-label">Maturity Val</div>
+          <div class="rd-stat-val" style="color:var(--blue)">${fmtFull(maturityVal)}</div>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      ${tenure > 0 ? `<div class="progress-wrap">
+        <div class="progress-label">
+          <span>Progress: ${pct}%</span>
+          <span>${isMatured ? 'Mature! 🎉' : rem + ' installments bachi'}</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill ${fillClass}" style="width:${pct}%"></div></div>
+      </div>` : ''}
+
+      ${nextDueHtml}
+
+      ${rd.note ? `<div class="loan-note">📝 ${rd.note}</div>` : ''}
+
+      ${history.length > 0 ? `
+      <span class="emi-history-toggle" onclick="this.nextElementSibling.classList.toggle('open')">📋 Installment History (${history.length})</span>
+      <div class="rd-history">
+        ${history.slice().reverse().map((h,hi) => `<div class="rd-h-item">Inst #${history.length-hi} – ${formatDate(h.date)} – ${fmtFull(h.amount)}</div>`).join('')}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function openRdModal(id) {
+  editRdId = id || null;
+  if (id) {
+    const rd = DATA.rd.find(x => x.id === id);
+    document.getElementById('rdModalTitle').textContent = '✏️ RD Edit';
+    document.getElementById('rd-bank').value = rd.bank || '';
+    document.getElementById('rd-type').value = rd.type || 'Bank RD';
+    document.getElementById('rd-accno').value = rd.accno || '';
+    document.getElementById('rd-installment').value = rd.installment || '';
+    document.getElementById('rd-tenure').value = rd.tenure || '';
+    document.getElementById('rd-rate').value = rd.rate || '';
+    document.getElementById('rd-paid').value = rd.paidCount || '';
+    document.getElementById('rd-startdate').value = rd.startDate || '';
+    document.getElementById('rd-dueday').value = rd.dueday || '';
+    document.getElementById('rd-note').value = rd.note || '';
+    document.getElementById('rd-flexi').checked = rd.flexi || false;
+    document.getElementById('rd-min-amount').value = rd.minAmount || '';
+    document.getElementById('rd-max-amount').value = rd.maxAmount || '';
+    toggleFlexiRdFields();
+  } else {
+    document.getElementById('rdModalTitle').textContent = '🏧 RD Add करें';
+    ['rd-bank','rd-accno','rd-installment','rd-tenure','rd-rate','rd-paid','rd-dueday','rd-note','rd-min-amount','rd-max-amount'].forEach(i => document.getElementById(i).value = '');
+    document.getElementById('rd-type').value = 'Bank RD';
+    document.getElementById('rd-startdate').value = todayStr();
+    document.getElementById('rd-flexi').checked = false;
+    document.getElementById('rdPreviewBox').style.display = 'none';
+    toggleFlexiRdFields();
+  }
+  document.getElementById('rdModal').classList.add('open');
+  setTimeout(calcRdPreview, 100);
+}
+function closeRdModal() { document.getElementById('rdModal').classList.remove('open'); }
+
+function toggleFlexiRdFields() {
+  const isFlexi = document.getElementById('rd-flexi').checked;
+  document.getElementById('rdFlexiFields').style.display = isFlexi ? 'block' : 'none';
+}
+
+function saveRd() {
+  const bank = document.getElementById('rd-bank').value.trim();
+  const installment = parseFloat(document.getElementById('rd-installment').value);
+  const tenure = parseInt(document.getElementById('rd-tenure').value);
+  const rate = parseFloat(document.getElementById('rd-rate').value);
+  const isFlexi = document.getElementById('rd-flexi').checked;
+  
+  if (!bank || !installment || !tenure || !rate) {
+    showToast('⚠️ Bank, Installment, Tenure aur Rate zaroori hai!'); return;
+  }
+  
+  if (isFlexi) {
+    const minAmt = parseFloat(document.getElementById('rd-min-amount').value);
+    const maxAmt = parseFloat(document.getElementById('rd-max-amount').value);
+    if (!minAmt || !maxAmt || minAmt > maxAmt) {
+      showToast('⚠️ Flexi mein Min/Max zaroori hai aur Min < Max hona chahiye!'); return;
+    }
+  }
+  
+  const paidCount = parseInt(document.getElementById('rd-paid').value) || 0;
+  if (paidCount > tenure) { showToast('⚠️ Paid count, Tenure se zyada nahi ho sakta!'); return; }
+
+  const rd = {
+    id: editRdId || Date.now().toString(),
+    bank, installment, tenure, rate, paidCount,
+    type: document.getElementById('rd-type').value,
+    accno: document.getElementById('rd-accno').value.trim(),
+    startDate: document.getElementById('rd-startdate').value,
+    dueday: parseInt(document.getElementById('rd-dueday').value) || 0,
+    note: document.getElementById('rd-note').value.trim(),
+    flexi: isFlexi,
+    minAmount: isFlexi ? parseFloat(document.getElementById('rd-min-amount').value) : 0,
+    maxAmount: isFlexi ? parseFloat(document.getElementById('rd-max-amount').value) : 0,
+  };
+
+  if (editRdId) {
+    const idx = DATA.rd.findIndex(x => x.id === editRdId);
+    rd.installmentHistory = DATA.rd[idx].installmentHistory || [];
+    DATA.rd[idx] = rd;
+    showToast('✅ RD update ho gayi!');
+  } else {
+    rd.installmentHistory = [];
+    DATA.rd.push(rd);
+    showToast('✅ RD add ho gayi!');
+  }
+  save(); closeRdModal(); renderRd();
+}
+
+function editRd(id) { openRdModal(id); }
+function deleteRd(id) {
+  if (!confirm('Kya aap yeh RD delete karna chahte hain?')) return;
+  DATA.rd = DATA.rd.filter(x => x.id !== id);
+  save(); renderRd(); showToast('🗑️ RD delete ho gayi');
+}
+
+function openRdPayModal(id) {
+  const rd = DATA.rd.find(x => x.id === id);
+  if (!rd) return;
+  document.getElementById('rdp-id').value = id;
+  document.getElementById('rdp-amount').value = rd.installment || '';
+  document.getElementById('rdp-date').value = todayStr();
+  const rem = (rd.tenure || 0) - (rd.paidCount || 0);
+  document.getElementById('rdPayInfo').innerHTML = `
+    <div style="font-weight:700;font-size:15px;margin-bottom:8px">${rd.bank}</div>
+    <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--text2)">Monthly Installment:</span><span style="color:var(--cyan);font-weight:700">${fmtFull(rd.installment)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:4px"><span style="color:var(--text2)">Paid:</span><span style="color:var(--green);font-weight:700">${rd.paidCount || 0} / ${rd.tenure}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:4px"><span style="color:var(--text2)">Baaki:</span><span style="color:var(--amber);font-weight:800;font-size:15px">${rem} installments</span></div>`;
+  document.getElementById('rdPayModal').classList.add('open');
+}
+function closeRdPayModal() { document.getElementById('rdPayModal').classList.remove('open'); }
+
+function saveRdPayment() {
+  const id = document.getElementById('rdp-id').value;
+  const amount = parseFloat(document.getElementById('rdp-amount').value) || 0;
+  if (!amount || amount <= 0) { showToast('⚠️ Amount daalna zaroori hai!'); return; }
+  const rd = DATA.rd.find(x => x.id === id);
+  if (!rd) return;
+  if ((rd.paidCount || 0) >= (rd.tenure || 0)) { showToast('🎉 RD already mature ho gayi!'); return; }
+  rd.paidCount = (rd.paidCount || 0) + 1;
+  if (!rd.installmentHistory) rd.installmentHistory = [];
+  const rdPayDate = document.getElementById('rdp-date').value || todayStr();
+  rd.installmentHistory.push({ date: rdPayDate, amount, instNo: rd.paidCount });
+  // Add to expense log so savings reflects RD deduction
+  DATA.expenses.unshift({
+    id: Date.now().toString(), type: 'out', cat: 'rd',
+    amount: amount,
+    desc: rd.name + ' RD #' + rd.paidCount,
+    date: rdPayDate
+  });
+  save(); closeRdPayModal(); renderAll();
+  if (rd.paidCount >= rd.tenure) showToast('🎉 RD Mature! Badhaai ho!');
+  else showToast(`✅ Installment #${rd.paidCount} paid! ${rd.tenure - rd.paidCount} bachi`);
+}
+
+// ===== PWA SETUP =====
+let deferredInstallPrompt = null;
+
+function setupPWA() {
+  // Generate app icon via canvas
+  const canvas = document.createElement('canvas');
+  canvas.width = 192; canvas.height = 192;
+  const ctx = canvas.getContext('2d');
+  const grad = ctx.createLinearGradient(0,0,192,192);
+  grad.addColorStop(0,'#1a2235'); grad.addColorStop(1,'#0d1117');
+  ctx.fillStyle = grad; ctx.roundRect(0,0,192,192,40); ctx.fill();
+  ctx.font = '110px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('💰',96,100);
+  const iconUrl = canvas.toDataURL('image/png');
+
+  document.getElementById('apple-touch-icon').href = iconUrl;
+  document.getElementById('favicon-32').href = iconUrl;
+
+  // Inject manifest
+  const manifest = {
+    name: 'Kharcha Manager v4 – मेरा बजट',
+    short_name: 'Kharcha',
+    description: 'Personal loan, EMI, udhar aur kharcha manager',
+    start_url: window.location.href,
+    display: 'standalone',
+    background_color: '#0d1117',
+    theme_color: '#0d1117',
+    orientation: 'portrait',
+    icons: [
+      { src: iconUrl, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+      { src: iconUrl, sizes: '512x512', type: 'image/png' }
+    ]
+  };
+  const mBlob = new Blob([JSON.stringify(manifest)],{type:'application/json'});
+  document.getElementById('pwa-manifest').href = URL.createObjectURL(mBlob);
+
+  // iOS check
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+  if (isIOS && !isStandalone) {
+    document.getElementById('iosInstallGuide').style.display='block';
+  }
+
+  // Android / Chrome install prompt
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    document.getElementById('installSettingRow').style.display='flex';
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    document.getElementById('installSettingRow').style.display='none';
+    showToast('🎉 App install ho gayi! Ab home screen par milegi');
+  });
+
+  // Register service worker for offline
+  if ('serviceWorker' in navigator) {
+    const swCode = `
+const CACHE = 'kharcha-v1';
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(['/'])));
+});
+self.addEventListener('fetch', e => {
+  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).catch(()=>new Response('Offline'))));
+});`;
+    try {
+      const swBlob = new Blob([swCode],{type:'application/javascript'});
+      navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(()=>{});
+    } catch(e){}
+  }
+}
+
+function triggerInstall() {
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.then(r => {
+      if (r.outcome==='accepted') showToast('✅ App install ho rahi hai...');
+      deferredInstallPrompt = null;
+    });
+  } else {
+    showToast('📱 Settings mein iOS guide dekho!');
+    switchTab('settings');
+  }
+}
+
+// ===== SEARCH =====
+let expSearchQuery = '';
+function onExpSearch(val) {
+  expSearchQuery = val.trim().toLowerCase();
+  document.getElementById('expSearchClear').style.display = val ? 'block' : 'none';
+  renderExpenses();
+}
+function clearExpSearch() {
+  expSearchQuery = '';
+  document.getElementById('expSearch').value = '';
+  document.getElementById('expSearchClear').style.display = 'none';
+  renderExpenses();
+}
+
+// ===== CATEGORY CHART =====
+const CAT_COLORS = {
+  food:'#f97316',travel:'#60a5fa',shopping:'#a78bfa',medical:'#f43f5e',
+  electricity:'#fbbf24',rent:'#22d3ee',mobile:'#34d399',education:'#818cf8',
+  fuel:'#fb923c',entertainment:'#e879f9',grocery:'#4ade80',emi:'#f87171',
+  salary:'#22c55e',business:'#3b82f6',freelance:'#8b5cf6',gift:'#ec4899',
+  interest:'#06b6d4',rd:'#22d3ee',other:'#94a3b8'
+};
+
+function renderCatChart() {
+  const cm = selectedMonth || curMonthStr();
+  const outExp = DATA.expenses.filter(e => e.date && e.date.startsWith(cm) && e.type === 'out');
+  const totalSpent = outExp.reduce((s,e) => s + e.amount, 0);
+  const wrap = document.getElementById('catChartWrap');
+  if (!outExp.length || totalSpent === 0) { wrap.style.display = 'none'; return; }
+
+  // Group by category
+  const catMap = {};
+  outExp.forEach(e => {
+    if (!catMap[e.cat]) catMap[e.cat] = 0;
+    catMap[e.cat] += e.amount;
+  });
+
+  // Sort by amount desc, take top 6
+  const allCats = [...CATS_OUT, ...CATS_IN];
+  const sorted = Object.entries(catMap)
+    .sort((a,b) => b[1]-a[1])
+    .slice(0, 6);
+
+  const bars = sorted.map(([catId, amt]) => {
+    const cat = allCats.find(c => c.id === catId) || {icon:'💰', label:'Other'};
+    const pct = Math.round((amt / totalSpent) * 100);
+    const color = CAT_COLORS[catId] || '#94a3b8';
+    return `<div class="cat-bar-item">
+      <div class="cat-bar-icon">${cat.icon}</div>
+      <div class="cat-bar-label">${cat.label}</div>
+      <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="cat-bar-val" style="color:${color}">${fmt(amt)}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('catChartBars').innerHTML = bars;
+  wrap.style.display = 'block';
+}
+
+// ===== SAVINGS CARD =====
+function renderSavingsCard(income, spent, totalEMI) {
+  const net = income - spent - totalEMI;
+  const el = document.getElementById('savingsAmount');
+  el.textContent = (net < 0 ? '-' : '') + fmtFull(Math.abs(net));
+  el.className = 'savings-amount' + (net < 0 ? ' neg' : '');
+  document.getElementById('savingsHint').textContent = net > 0 ? '🎉 Waah! Acha bacha!' : net === 0 ? '😐 Theek hai, save karo' : '⚠️ Kharcha zyada hai!';
+  document.getElementById('sv-income').textContent = fmtFull(income);
+  document.getElementById('sv-spent').textContent = fmtFull(spent);
+  document.getElementById('sv-emi').textContent = fmtFull(totalEMI);
+}
+
+// ===== RENDER ALL =====
+function renderAll() {
+  renderLoans();
+  renderExpenses();
+  renderOverview();
+  renderUdhar();
+  renderRd();
+}
+
+// ===== HEADER DATE =====
+function updateHeaderDate() {
+  const now=new Date();
+  document.getElementById('headerSub').textContent=now.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+
+// ===== TOAST =====
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ===== INIT =====
+window.addEventListener('load', () => {
+  // Setup PWA first
+  setupPWA();
+
+  // Splash screen
+  setTimeout(() => {
+    const splash = document.getElementById('splashOverlay');
+    splash.classList.add('fade');
+    setTimeout(() => splash.style.display='none', 500);
+  }, 1200);
+
+  updateHeaderDate();
+  renderCatGrid();
+  initPin();
+});
+</script>
+</body>
+</html>
